@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  control-center:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: our-smp-control-center
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      - JWT_SECRET=our-smp-super-secret-jwt-key-2026
+      - BEDROCK_SERVER_HOST=ayx.acido.dev
+      - BEDROCK_SERVER_PORT=19132
+      - BEDROCK_TRANSPORT=nethernet
+      - AUTO_TELEPORT_ENABLED=true
+      - AUTO_TELEPORT_DELAY_SEC=8
+      - AUTO_TELEPORT_DISTANCE_THRESHOLD=10
+      - ACIDOHOST_PANEL_URL=${ACIDOHOST_PANEL_URL:-}
+      - ACIDOHOST_SERVER_ID=${ACIDOHOST_SERVER_ID:-}
+      - ACIDOHOST_API_KEY=${ACIDOHOST_API_KEY:-}
+      - RENDER_SERVICE_ID=srv-cba31dh5efls73cocdm0
+      - RENDER_BOT_SERVICE_URL=${RENDER_BOT_SERVICE_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

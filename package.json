@@ -1,0 +1,25 @@
+{
+  "name": "our-smp-control-center",
+  "version": "1.0.0",
+  "description": "OUR SMP Control Center - Minecraft Bedrock BDS Server & AFK Bot Manager",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
+    "start": "node server/src/index.js",
+    "dev": "node scripts/dev.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  },
+  "keywords": [
+    "minecraft",
+    "bedrock",
+    "bot-manager",
+    "afk-bot",
+    "pterodactyl",
+    "control-center",
+    "render"
+  ],
+  "author": "OUR SMP Team",
+  "license": "MIT"
+}

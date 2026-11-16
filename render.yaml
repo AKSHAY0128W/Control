@@ -1,0 +1,43 @@
+services:
+  # =========================================================================
+  # OUR SMP Control Center - Single-Service Deployment on Render
+  # Hosts full Node.js API + WebSockets + Built React Frontend (Light Theme)
+  # =========================================================================
+  - type: web
+    name: our-smp-control-center
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BEDROCK_SERVER_HOST
+        value: ayx.acido.dev
+      - key: BEDROCK_SERVER_PORT
+        value: "19132"
+      - key: BEDROCK_TRANSPORT
+        value: nethernet
+      - key: SERVER_POLL_INTERVAL_MS
+        value: "5000"
+      - key: AUTO_TELEPORT_ENABLED
+        value: "true"
+      - key: AUTO_TELEPORT_DELAY_SEC
+        value: "8"
+      - key: AUTO_TELEPORT_DISTANCE_THRESHOLD
+        value: "10"
+      # Optional: Link AcidoHost Pterodactyl Panel API
+      - key: ACIDOHOST_PANEL_URL
+        sync: false
+      - key: ACIDOHOST_API_KEY
+        sync: false
+      - key: ACIDOHOST_SERVER_ID
+        sync: false
+      # Optional: Discord Webhook
+      - key: DISCORD_WEBHOOK_URL
+        sync: false

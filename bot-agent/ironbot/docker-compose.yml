@@ -1,0 +1,20 @@
+services:
+  ironbot:
+    build: .
+    container_name: our-smp-ironbot
+    restart: unless-stopped
+    environment:
+      - HOST=ayx.acido.dev
+      - MINECRAFT_PORT=19132
+      - BOT_NAME=IronBot,IronBot2
+      - TRANSPORT=nethernet
+      - GAME_VERSION=1.26.61
+      - AUTH_INPUT=false
+      - CONTROL_CENTER_URL=http://localhost:5000
+    ports:
+      - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
