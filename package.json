@@ -4,8 +4,8 @@
   "description": "OUR SMP Control Center - Minecraft Bedrock BDS Server & AFK Bot Manager",
   "private": true,
   "scripts": {
-    "install:all": "npm --prefix server install && npm --prefix client install",
-    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
+    "install:all": "npm --prefix server install && npm --prefix client install --include=dev",
+    "build": "npm --prefix client install --include=dev && npm --prefix client run build && npm --prefix server install",
     "start": "node server/src/index.js",
     "dev": "node scripts/dev.js",
     "dev:server": "cd server && npm run dev",
