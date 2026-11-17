@@ -3,7 +3,7 @@ import { ControlCenterProvider, useControlCenter } from './context/ControlCenter
 import { Sidebar } from './components/Sidebar';
 import { TopHeader } from './components/TopHeader';
 import { LoginView } from './components/LoginView';
-import { ServerBanner } from './components/ServerBanner';
+import { OverviewView } from './components/OverviewView';
 import { BotManager } from './components/BotManager';
 import { FarmManager } from './components/FarmManager';
 import { ActivityLogView } from './components/ActivityLogView';
@@ -14,177 +14,171 @@ import {
   EditCoordinatesModal, 
   CustomTeleportModal, 
   AddBotModal, 
-  SettingsModal, 
-  ConsoleCommandModal,
-  AddFarmModal,
-  EditFarmModal
+  AddFarmModal, 
+  EditFarmModal 
 } from './components/Modals';
 import { CheckCircle2, AlertTriangle, X } from 'lucide-react';
 
 function DashboardLayout() {
-  const { isAuthenticated, activeTab, setActiveTab, lastNotification, setLastNotification } = useControlCenter();
+  const { 
+    isAuthenticated, 
+    activeTab, 
+    theme, 
+    lastNotification, 
+    setLastNotification 
+  } = useControlCenter();
+
+  // Responsive sidebar states
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Modal states
-  const [activeModal, setActiveModal] = useState(null); // 'console' | 'settings' | 'addBot' | 'editCoords' | 'customTp' | 'addFarm' | 'editFarm'
+  const [activeModal, setActiveModal] = useState(null); // 'addBot' | 'editCoords' | 'customTp' | 'addFarm' | 'editFarm'
   const [selectedBot, setSelectedBot] = useState(null);
   const [selectedFarm, setSelectedFarm] = useState(null);
 
-  // If not authenticated, render modern login portal
+  // If not authenticated, render Lovable styled login portal
   if (!isAuthenticated) {
-    return <LoginView />;
+    return (
+      <div className={theme === 'dark' ? 'dark' : ''}>
+        <LoginView />
+      </div>
+    );
   }
 
   return (
-    <div className="app-shell">
-      {/* Modern Collapsible Sidebar */}
-      <Sidebar />
+    <div className={`${theme === 'dark' ? 'dark' : ''} min-h-screen bg-background text-foreground`}>
+      <div className="flex min-h-screen">
+        {/* Responsive Collapsible Sidebar */}
+        <Sidebar 
+          isCollapsed={isCollapsed} 
+          isMobileOpen={isMobileOpen} 
+          setIsMobileOpen={setIsMobileOpen} 
+        />
 
-      {/* Main Content Area */}
-      <div className="main-layout">
-        {/* Top App Header with Live Telemetry Indicators */}
-        <TopHeader onOpenConsole={() => setActiveTab('console')} />
+        {/* Main Content Area */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Top Application Header */}
+          <TopHeader 
+            isCollapsed={isCollapsed} 
+            setIsCollapsed={setIsCollapsed} 
+            setIsMobileOpen={setIsMobileOpen} 
+          />
 
-        <main className="page-body">
-          {/* Notification Toast */}
-          {lastNotification && (
-            <div 
-              className={`alert-toast ${lastNotification.type === 'success' ? 'success' : lastNotification.type === 'info' ? 'success' : 'warning'}`}
-              style={{ marginBottom: '20px', animation: 'fadeIn 0.2s ease' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {lastNotification.type === 'success' || lastNotification.type === 'info' ? (
-                  <CheckCircle2 size={16} />
-                ) : (
-                  <AlertTriangle size={16} />
-                )}
-                <span style={{ fontWeight: 500 }}>{lastNotification.text}</span>
-              </div>
-              <button 
-                onClick={() => setLastNotification(null)}
-                style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: '2px' }}
-              >
-                <X size={15} />
-              </button>
+          {/* Page Body Container */}
+          <main className="flex-1">
+            <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+              {/* Notification Toast Alert */}
+              {lastNotification && (
+                <div 
+                  className={`mb-5 flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-xs shadow-sm transition-all animate-in fade-in-0 ${
+                    lastNotification.type === 'success' || lastNotification.type === 'info'
+                      ? 'border-success/20 bg-success/10 text-success'
+                      : 'border-warning/25 bg-warning/10 text-warning'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {lastNotification.type === 'success' || lastNotification.type === 'info' ? (
+                      <CheckCircle2 className="size-4 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="size-4 shrink-0" />
+                    )}
+                    <span className="font-medium">{lastNotification.text}</span>
+                  </div>
+                  <button 
+                    onClick={() => setLastNotification(null)}
+                    aria-label="Dismiss notification"
+                    className="flex size-6 items-center justify-center rounded text-current opacity-70 hover:opacity-100 cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* View 1: Overview */}
+              {activeTab === 'overview' && (
+                <OverviewView />
+              )}
+
+              {/* View 2: Bot Manager */}
+              {activeTab === 'bots' && (
+                <BotManager 
+                  onOpenAddBot={() => setActiveModal('addBot')}
+                  onOpenEditCoords={(bot) => {
+                    setSelectedBot(bot);
+                    setActiveModal('editCoords');
+                  }}
+                  onOpenCustomTeleport={(bot) => {
+                    setSelectedBot(bot);
+                    setActiveModal('customTp');
+                  }}
+                />
+              )}
+
+              {/* View 3: Farm Loaders */}
+              {activeTab === 'farms' && (
+                <FarmManager 
+                  onOpenAddFarm={() => setActiveModal('addFarm')}
+                  onOpenEditFarm={(farm) => {
+                    setSelectedFarm(farm);
+                    setActiveModal('editFarm');
+                  }}
+                />
+              )}
+
+              {/* View 4: Server Console */}
+              {activeTab === 'console' && (
+                <ConsoleView />
+              )}
+
+              {/* View 5: Audit & Activity */}
+              {activeTab === 'activity' && (
+                <ActivityLogView />
+              )}
+
+              {/* View 6: Settings */}
+              {activeTab === 'settings' && (
+                <SettingsView />
+              )}
+
+              {/* View 7: Security & Auth */}
+              {activeTab === 'security' && (
+                <SecurityView />
+              )}
             </div>
-          )}
-
-          {/* Tab 1: Overview */}
-          {activeTab === 'overview' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <ServerBanner />
-              <BotManager 
-                onOpenAddBot={() => setActiveModal('addBot')}
-                onOpenEditCoords={(bot) => {
-                  setSelectedBot(bot);
-                  setActiveModal('editCoords');
-                }}
-                onOpenCustomTeleport={(bot) => {
-                  setSelectedBot(bot);
-                  setActiveModal('customTp');
-                }}
-              />
-              <FarmManager 
-                onOpenAddFarm={() => setActiveModal('addFarm')}
-                onOpenEditFarm={(farm) => {
-                  setSelectedFarm(farm);
-                  setActiveModal('editFarm');
-                }}
-              />
-              <ActivityLogView />
-            </div>
-          )}
-
-          {/* Tab 2: Bot Manager */}
-          {activeTab === 'bots' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <BotManager 
-                onOpenAddBot={() => setActiveModal('addBot')}
-                onOpenEditCoords={(bot) => {
-                  setSelectedBot(bot);
-                  setActiveModal('editCoords');
-                }}
-                onOpenCustomTeleport={(bot) => {
-                  setSelectedBot(bot);
-                  setActiveModal('customTp');
-                }}
-              />
-            </div>
-          )}
-
-          {/* Tab 3: Farm Loaders */}
-          {activeTab === 'farms' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <FarmManager 
-                onOpenAddFarm={() => setActiveModal('addFarm')}
-                onOpenEditFarm={(farm) => {
-                  setSelectedFarm(farm);
-                  setActiveModal('editFarm');
-                }}
-              />
-            </div>
-          )}
-
-          {/* Tab 4: Server Console */}
-          {activeTab === 'console' && (
-            <ConsoleView />
-          )}
-
-          {/* Tab 5: Audit & Activity */}
-          {activeTab === 'activity' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <ActivityLogView />
-            </div>
-          )}
-
-          {/* Tab 6: Settings */}
-          {activeTab === 'settings' && (
-            <SettingsView />
-          )}
-
-          {/* Tab 7: Security & Auth */}
-          {activeTab === 'security' && (
-            <SecurityView />
-          )}
-
-          {/* Action Modals */}
-          {activeModal === 'console' && (
-            <ConsoleCommandModal onClose={() => setActiveModal(null)} />
-          )}
-
-          {activeModal === 'settings' && (
-            <SettingsModal onClose={() => setActiveModal(null)} />
-          )}
-
-          {activeModal === 'addBot' && (
-            <AddBotModal onClose={() => setActiveModal(null)} />
-          )}
-
-          {activeModal === 'editCoords' && selectedBot && (
-            <EditCoordinatesModal 
-              bot={selectedBot} 
-              onClose={() => { setSelectedBot(null); setActiveModal(null); }} 
-            />
-          )}
-
-          {activeModal === 'customTp' && selectedBot && (
-            <CustomTeleportModal 
-              bot={selectedBot} 
-              onClose={() => { setSelectedBot(null); setActiveModal(null); }} 
-            />
-          )}
-
-          {activeModal === 'addFarm' && (
-            <AddFarmModal onClose={() => setActiveModal(null)} />
-          )}
-
-          {activeModal === 'editFarm' && selectedFarm && (
-            <EditFarmModal 
-              farm={selectedFarm} 
-              onClose={() => { setSelectedFarm(null); setActiveModal(null); }} 
-            />
-          )}
-        </main>
+          </main>
+        </div>
       </div>
+
+      {/* Action Modals */}
+      {activeModal === 'addBot' && (
+        <AddBotModal onClose={() => setActiveModal(null)} />
+      )}
+
+      {activeModal === 'editCoords' && selectedBot && (
+        <EditCoordinatesModal 
+          bot={selectedBot} 
+          onClose={() => { setSelectedBot(null); setActiveModal(null); }} 
+        />
+      )}
+
+      {activeModal === 'customTp' && selectedBot && (
+        <CustomTeleportModal 
+          bot={selectedBot} 
+          onClose={() => { setSelectedBot(null); setActiveModal(null); }} 
+        />
+      )}
+
+      {activeModal === 'addFarm' && (
+        <AddFarmModal onClose={() => setActiveModal(null)} />
+      )}
+
+      {activeModal === 'editFarm' && selectedFarm && (
+        <EditFarmModal 
+          farm={selectedFarm} 
+          onClose={() => { setSelectedFarm(null); setActiveModal(null); }} 
+        />
+      )}
     </div>
   );
 }

@@ -1,27 +1,47 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { ShieldCheck, Lock, KeyRound, AlertCircle, CheckCircle2, UserCheck, ShieldAlert } from 'lucide-react';
+import { 
+  PageHeader, 
+  SectionCard, 
+  InputField, 
+  Badge, 
+  StatusDot, 
+  Button 
+} from './ui/Shared';
+import { 
+  ShieldCheck, 
+  UserCheck, 
+  KeyRound, 
+  Lock, 
+  AlertCircle, 
+  CheckCircle2 
+} from 'lucide-react';
 
 export function SecurityView() {
-  const { user, changePassword, activityLogs } = useControlCenter();
+  const { user, changePassword, activityLogs, setLastNotification } = useControlCenter();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setMessage(null);
+    if (e) e.preventDefault();
+    setErrorMsg('');
 
-    if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match.' });
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setErrorMsg('Complete all three fields.');
       return;
     }
 
-    if (newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'New password must be at least 6 characters.' });
+    if (newPassword.length < 8) {
+      setErrorMsg('Use at least 8 characters.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('New passwords do not match.');
       return;
     }
 
@@ -29,207 +49,163 @@ export function SecurityView() {
     try {
       const res = await changePassword(currentPassword, newPassword);
       if (res?.success) {
-        setMessage({ type: 'success', text: 'Password successfully updated!' });
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        if (setLastNotification) {
+          setLastNotification({ type: 'success', text: 'Operator password updated successfully!' });
+        }
       } else {
-        setMessage({ type: 'error', text: res?.error || 'Failed to update password.' });
+        setErrorMsg(res?.error || 'Failed to update password.');
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Request failed. Please verify connection.' });
+      setErrorMsg(err.message || 'Error updating password.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter security logs
   const securityLogs = activityLogs.filter(
-    (log) => log.source === 'Security' || log.event?.startsWith('AUTH_') || log.event?.includes('PASSWORD')
+    (log) => log.source === 'Security' || log.source === 'SecurityAudit' || log.event?.includes('AUTH') || log.event?.includes('PASSWORD')
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '850px' }}>
-      {/* Security Overview Card */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ShieldCheck size={24} />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>Security &amp; Authentication Control</h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              Manage administrative credentials, JWT session security, and access audit records.
-            </p>
-          </div>
-        </div>
+    <div>
+      {/* Page Header */}
+      <PageHeader
+        eyebrow="Access / Account"
+        title="Security & authentication"
+        detail="Operator session details and account credentials."
+      />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="status-pill online">
-            <span className="pulse-dot online" />
-            JWT Session Active
-          </span>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-        {/* Active Session Info */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <UserCheck size={18} color="var(--primary)" />
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>Current Session</h4>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Signed In User</span>
-              <strong style={{ color: 'var(--text-main)' }}>{user?.name || user?.username || 'admin'}</strong>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Access Role</span>
-              <span style={{ textTransform: 'uppercase', fontWeight: 700, color: 'var(--primary-text)', fontSize: '0.78rem' }}>
-                {user?.role || 'SUPERADMIN'}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Token Security</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-main)' }}>
-                HMAC SHA-256 JWT
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Session Expiry</span>
-              <span style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>7 Days Rolling</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Change Admin Password */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <KeyRound size={18} color="var(--primary)" />
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>Change Password</h4>
-          </div>
-
-          {message && (
-            <div className={`alert-toast ${message.type === 'success' ? 'success' : 'danger'}`}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                <span>{message.text}</span>
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="space-y-6">
+          {/* Active Session Card */}
+          <SectionCard
+            icon={UserCheck}
+            title="Active session"
+            description="Current operator authentication state"
+          >
+            <div className="divide-y divide-border">
+              <div className="flex items-center justify-between py-2.5 text-xs">
+                <span className="text-muted-foreground">Signed in as</span>
+                <span className="font-semibold text-foreground">
+                  {user?.name || user?.username || 'Server Administrator'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2.5 text-xs">
+                <span className="text-muted-foreground">Access role</span>
+                <span className="font-bold text-primary">{user?.role || 'SUPERADMIN'}</span>
+              </div>
+              <div className="flex items-center justify-between py-2.5 text-xs">
+                <span className="text-muted-foreground">Token security</span>
+                <span className="font-mono text-[11px] text-foreground">HMAC SHA-256 JWT</span>
+              </div>
+              <div className="flex items-center justify-between py-2.5 text-xs">
+                <span className="text-muted-foreground">Session status</span>
+                <Badge tone="success">
+                  <StatusDot tone="success" />
+                  <span>Verified session</span>
+                </Badge>
               </div>
             </div>
-          )}
+          </SectionCard>
 
-          <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="form-group">
-              <label className="form-label">Current Password</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Current admin password"
+          {/* Change Password Card */}
+          <SectionCard
+            icon={KeyRound}
+            title="Change password"
+            description="Update the master operator password"
+          >
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <InputField
+                label="Current password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">New Password</label>
-              <input
                 type="password"
-                className="form-control"
-                placeholder="Minimum 6 characters"
+                placeholder="Current master password"
+              />
+              <InputField
+                label="New password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Confirm New Password</label>
-              <input
                 type="password"
-                className="form-control"
-                placeholder="Re-enter new password"
+                placeholder="At least 8 characters"
+              />
+              <InputField
+                label="Confirm new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                type="password"
+                placeholder="Re-enter new password"
               />
-            </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-              style={{ marginTop: '8px', justifyContent: 'center' }}
-            >
-              <Lock size={15} />
-              <span>{loading ? 'Updating Password...' : 'Update Password'}</span>
-            </button>
-          </form>
-        </div>
-      </div>
+              {errorMsg && (
+                <p role="alert" className="text-xs text-danger font-medium">
+                  {errorMsg}
+                </p>
+              )}
 
-      {/* Security Audit Table */}
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-          <ShieldAlert size={18} color="var(--primary)" />
-          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>Authentication &amp; Security Audit History</h4>
+              <Button
+                type="submit"
+                variant="outline"
+                size="sm"
+                disabled={loading}
+              >
+                {loading ? 'Updating...' : 'Update password'}
+              </Button>
+            </form>
+          </SectionCard>
         </div>
 
-        {securityLogs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            No recent security alerts recorded.
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Event</th>
-                  <th>Description</th>
-                  <th>Severity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {securityLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </td>
-                    <td>
-                      <span 
-                        style={{
-                          fontSize: '0.75rem',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 700,
-                          color: log.event === 'AUTH_FAILED' ? 'var(--danger-text)' : 'var(--primary-text)'
-                        }}
-                      >
-                        {log.event}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '0.82rem' }}>{log.description}</td>
-                    <td>
-                      <span 
-                        className={`status-pill ${
-                          log.severity === 'warning' ? 'misplaced' : log.severity === 'info' ? 'online' : 'online'
-                        }`}
-                        style={{ fontSize: '0.7rem', padding: '2px 8px' }}
-                      >
-                        {log.severity}
-                      </span>
-                    </td>
+        {/* Column 2: Security Audit Log */}
+        <div>
+          <SectionCard
+            icon={ShieldCheck}
+            title="Security audit"
+            description="Recent sign-in, token, and account security events"
+          >
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2.5">Time</th>
+                    <th className="px-3 py-2.5">Event</th>
+                    <th className="px-3 py-2.5">Source</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {securityLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
+                        No security audit logs recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    securityLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-muted/20">
+                        <td className="whitespace-nowrap px-3 py-2.5 font-mono text-muted-foreground">
+                          {log.timestamp 
+                            ? new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
+                            : log.time || 'Just now'}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Badge tone="neutral">
+                            {log.event || 'SECURITY_EVENT'}
+                          </Badge>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-mono text-muted-foreground">
+                          {log.source || 'AuthService'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
+        </div>
       </div>
     </div>
   );

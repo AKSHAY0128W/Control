@@ -1,96 +1,122 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { Activity, Clock, ShieldCheck, Filter } from 'lucide-react';
+import { PageHeader, Badge, Button } from './ui/Shared';
+import { Download } from 'lucide-react';
 
 export function ActivityLogView() {
-  const { activityLogs } = useControlCenter();
-  const [filter, setFilter] = useState('all');
+  const { activityLogs, setLastNotification } = useControlCenter();
+  const [filter, setFilter] = useState('All');
 
   const filteredLogs = activityLogs.filter(log => {
-    if (filter === 'all') return true;
-    if (filter === 'teleport') return log.event?.includes('TP') || log.event?.includes('TELEPORT');
-    if (filter === 'server') return log.event?.includes('SERVER');
-    if (filter === 'bot') return log.event?.includes('BOT');
-    return true;
+    if (filter === 'All') return true;
+    const eventKind = log.type || (
+      log.event?.includes('TP') || log.event?.includes('TELEPORT') 
+        ? 'Teleport' 
+        : log.event?.includes('BOT') 
+          ? 'Bot' 
+          : 'Server'
+    );
+    return eventKind.toLowerCase() === filter.toLowerCase();
   });
 
-  const formatTime = (isoString) => {
-    try {
-      const d = new Date(isoString);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    } catch {
-      return isoString;
+  const handleExport = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activityLogs, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `our-smp-activity-log-${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+
+    if (setLastNotification) {
+      setLastNotification({ type: 'success', text: 'Activity log exported successfully.' });
     }
   };
 
   return (
-    <div style={{ marginTop: '8px' }}>
-      <div className="section-header">
-        <div>
-          <div className="section-title">
-            <Activity size={22} color="var(--primary)" />
-            <span>Live Activity &amp; Auto-Teleport Audit Feed</span>
-          </div>
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Real-time audit log of server restarts, bot spawn checks, and auto-teleport executions.
-          </div>
-        </div>
+    <div>
+      {/* Page Header */}
+      <PageHeader
+        eyebrow="Observability / Events"
+        title="Audit & activity"
+        detail="A chronological record of server, bot, and teleport events."
+        actions={
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
+            <Download className="size-3.5" />
+            <span>Export log</span>
+          </Button>
+        }
+      />
 
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {['all', 'teleport', 'server', 'bot'].map((f) => (
-            <button
-              key={f}
-              className={`btn btn-sm ${filter === f ? 'btn-primary' : ''}`}
-              style={{ padding: '4px 12px', fontSize: '0.76rem', textTransform: 'capitalize' }}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+      {/* Filter Buttons & Total Count */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {['All', 'Teleport', 'Server', 'Bot'].map((f) => (
+          <Button
+            key={f}
+            variant={filter === f ? 'default' : 'outline'}
+            size="sm"
+            className="h-8"
+            onClick={() => setFilter(f)}
+          >
+            {f}
+          </Button>
+        ))}
+        <span className="ml-auto text-xs text-muted-foreground">
+          {filteredLogs.length} events
+        </span>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
+      {/* Events Table */}
+      <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
+        <table className="w-full min-w-[680px] text-left text-xs">
+          <thead className="border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th style={{ width: '110px' }}>Time</th>
-              <th style={{ width: '190px' }}>Event</th>
-              <th>Description</th>
-              <th style={{ width: '130px' }}>Source</th>
+              <th className="px-4 py-3 font-semibold">Time</th>
+              <th className="px-4 py-3 font-semibold">Event</th>
+              <th className="px-4 py-3 font-semibold">Description</th>
+              <th className="px-4 py-3 font-semibold">Source</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {filteredLogs.length === 0 ? (
               <tr>
-                <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
-                  No activity events recorded yet.
+                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  No matching activity yet.
                 </td>
               </tr>
             ) : (
-              filteredLogs.slice(0, 30).map((log) => (
-                <tr key={log.id}>
-                  <td className="mono" style={{ color: 'var(--text-muted)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
-                    {formatTime(log.timestamp)}
-                  </td>
-                  <td>
-                    <span 
-                      className={`status-pill ${
-                        log.severity === 'error' ? 'offline' : log.severity === 'warning' ? 'misplaced' : 'online'
-                      }`}
-                      style={{ fontSize: '0.72rem', padding: '2px 8px', fontFamily: 'var(--font-mono)' }}
-                    >
-                      {log.event}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--text-main)', fontSize: '0.84rem' }}>
-                    {log.description}
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                    {log.source || 'System'}
-                  </td>
-                </tr>
-              ))
+              filteredLogs.map((log) => {
+                const eventKind = log.type || (
+                  log.event?.includes('TP') || log.event?.includes('TELEPORT') 
+                    ? 'Teleport' 
+                    : log.event?.includes('BOT') 
+                      ? 'Bot' 
+                      : 'Server'
+                );
+                const badgeTone = eventKind === 'Teleport' ? 'primary' : eventKind === 'Bot' ? 'warning' : 'neutral';
+                const timeFormatted = log.timestamp 
+                  ? new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
+                  : log.time || 'Just now';
+
+                return (
+                  <tr key={log.id} className="hover:bg-muted/20">
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-muted-foreground">
+                      {timeFormatted}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge tone={badgeTone}>
+                        {log.event || log.action || 'EVENT'}
+                      </Badge>
+                    </td>
+                    <td className="max-w-[440px] px-4 py-3 text-foreground">
+                      {log.details || log.description || log.message}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-muted-foreground">
+                      {log.source || 'ControlCenter'}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

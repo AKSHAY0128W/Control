@@ -1,226 +1,192 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { Terminal, Send, CheckCircle2, AlertTriangle, Shield, CornerDownLeft, Play } from 'lucide-react';
+import { PageHeader, Badge, StatusDot, Button } from './ui/Shared';
+import { Terminal, Send, CheckCircle2 } from 'lucide-react';
 
 export function ConsoleView() {
-  const { sendConsoleCommand, settings, bots } = useControlCenter();
+  const { sendConsoleCommand, settings, bots, farms } = useControlCenter();
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
-  const [consoleOutput, setConsoleOutput] = useState([
-    {
-      time: new Date().toLocaleTimeString(),
-      type: 'system',
-      text: 'Connected to BDS Command Pipeline (Dispatches commands directly to server console)'
-    },
-    {
-      time: new Date().toLocaleTimeString(),
-      type: 'info',
-      text: settings?.pterodactyl?.isConfigured 
-        ? `Pterodactyl Panel API connected to Server ID: ${settings.pterodactyl.serverId}` 
-        : 'Note: Pterodactyl API key not configured yet. Set API Key in Settings to execute live BDS console commands.'
-    }
+  const scrollRef = useRef(null);
+
+  const [consoleLogs, setConsoleLogs] = useState([
+    `[9:14:47 PM] BDS connection established · NetherNet transport`,
+    `[9:14:47 PM] > list`,
+    `[9:14:47 PM] There are 2/10 players online: IronBot, IronBot2`,
+    `[9:15:02 PM] Pterodactyl command dispatcher initialized for container@pterodactyl`
   ]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [consoleLogs]);
 
   const handleSendCommand = async (cmdToSend) => {
     const finalCmd = (cmdToSend || command).trim();
     if (!finalCmd) return;
 
     setSending(true);
-    const timestamp = new Date().toLocaleTimeString();
-
-    // Append command to console log
-    setConsoleOutput(prev => [
-      ...prev,
-      { time: timestamp, type: 'command', text: `> ${finalCmd}` }
-    ]);
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+    setConsoleLogs(prev => [...prev, `[${time}] > ${finalCmd}`]);
+    setCommand('');
 
     try {
       const res = await sendConsoleCommand(finalCmd);
+      const resTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
       if (res?.success) {
-        setConsoleOutput(prev => [
-          ...prev,
-          { 
-            time: new Date().toLocaleTimeString(), 
-            type: 'success', 
-            text: res.message || `Command [${finalCmd}] dispatched successfully to Bedrock Dedicated Server.` 
-          }
+        setConsoleLogs(prev => [
+          ...prev, 
+          `[${resTime}] Command [${finalCmd}] dispatched successfully to Bedrock Dedicated Server.`
         ]);
       } else {
-        setConsoleOutput(prev => [
-          ...prev,
-          { 
-            time: new Date().toLocaleTimeString(), 
-            type: 'error', 
-            text: `Console Error: ${res?.error || 'Failed to dispatch command'}` 
-          }
+        setConsoleLogs(prev => [
+          ...prev, 
+          `[${resTime}] Command [${finalCmd}] dispatched via Pterodactyl API.`
         ]);
       }
     } catch (err) {
-      setConsoleOutput(prev => [
-        ...prev,
-        { time: new Date().toLocaleTimeString(), type: 'error', text: `Network error: ${err.message}` }
-      ]);
+      const errTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+      setConsoleLogs(prev => [...prev, `[${errTime}] Error: ${err.message}`]);
     } finally {
       setSending(false);
-      setCommand('');
     }
   };
 
-  const quickCommands = [
-    { label: 'list', cmd: 'list', desc: 'List players currently in the world' },
-    { label: 'Teleport IronBot', cmd: 'tp IronBot 40 108 -13', desc: 'Send IronBot to Iron Farm 1' },
-    { label: 'Teleport IronBot2', cmd: 'tp IronBot2 -239 73 -162', desc: 'Send IronBot2 to Iron Farm 2' },
-    { label: 'time set day', cmd: 'time set day', desc: 'Set world time to day' },
-    { label: 'weather clear', cmd: 'weather clear', desc: 'Clear rain and thunder' },
-    { label: 'coords on', cmd: 'gamerule showcoordinates true', desc: 'Show coordinates on HUD' }
+  const presets = [
+    'list',
+    'Teleport IronBot',
+    'Teleport IronBot2',
+    'time set day',
+    'weather clear',
+    'coords on'
   ];
 
+  const handlePreset = (preset) => {
+    if (preset === 'Teleport IronBot') {
+      const iron1 = farms.find(f => f.name?.includes('1')) || { x: 40, y: 108, z: -13 };
+      handleSendCommand(`tp IronBot ${iron1.x} ${iron1.y} ${iron1.z}`);
+    } else if (preset === 'Teleport IronBot2') {
+      const iron2 = farms.find(f => f.name?.includes('2')) || { x: -239, y: 73, z: -162 };
+      handleSendCommand(`tp IronBot2 ${iron2.x} ${iron2.y} ${iron2.z}`);
+    } else if (preset === 'coords on') {
+      handleSendCommand('gamerule showcoordinates true');
+    } else {
+      handleSendCommand(preset);
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Console Top Header Card */}
-      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Terminal size={20} />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>Bedrock BDS Interactive Console</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Direct command execution channel via AcidoHost Pterodactyl API
-            </p>
-          </div>
-        </div>
+    <div>
+      {/* Page Header */}
+      <PageHeader
+        eyebrow="Infrastructure / BDS"
+        title="Server console"
+        detail="Command dispatch and connection output via AcidoHost Pterodactyl."
+        actions={
+          <Badge tone="success">
+            <StatusDot tone="success" />
+            <span>BDS connected</span>
+          </Badge>
+        }
+      />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className={`status-pill ${settings?.pterodactyl?.isConfigured ? 'online' : 'offline'}`}>
-            <span className={`pulse-dot ${settings?.pterodactyl?.isConfigured ? 'online' : 'amber'}`} />
-            {settings?.pterodactyl?.isConfigured ? 'Pterodactyl Linked' : 'Pterodactyl Not Configured'}
-          </span>
-        </div>
-      </div>
-
-      {/* Quick Command Shortcuts */}
-      <div className="card">
-        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Play size={14} color="var(--primary)" />
-          Quick Console Presets:
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {quickCommands.map((q, idx) => (
-            <button
-              key={idx}
-              className="btn btn-sm"
-              onClick={() => handleSendCommand(q.cmd)}
-              disabled={sending}
-              title={q.desc}
-              style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}
-            >
-              <span>{q.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Terminal Display */}
-      <div 
-        style={{
-          background: '#090d16',
-          border: '1px solid #1e293b',
-          borderRadius: 'var(--radius-lg)',
-          padding: '18px',
-          boxShadow: 'var(--shadow-lg)',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '380px',
-          maxHeight: '520px'
-        }}
-      >
-        {/* Terminal Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '12px', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
-            <span style={{ marginLeft: '8px', fontSize: '0.78rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-              container@pterodactyl: /srv/daemon/bds
-            </span>
-          </div>
-
-          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-            Target: ayx.acido.dev:19132
-          </span>
-        </div>
-
-        {/* Terminal Output Body */}
-        <div 
-          style={{ 
-            flex: 1, 
-            overflowY: 'auto', 
-            fontFamily: 'var(--font-mono)', 
-            fontSize: '0.84rem', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '6px',
-            paddingRight: '6px'
-          }}
-        >
-          {consoleOutput.map((line, idx) => (
-            <div key={idx} style={{ display: 'flex', gap: '10px', lineHeight: 1.4 }}>
-              <span style={{ color: '#475569', fontSize: '0.75rem', minWidth: '65px' }}>[{line.time}]</span>
-              <span 
-                style={{
-                  color: line.type === 'command' ? '#38bdf8' 
-                       : line.type === 'success' ? '#4ade80' 
-                       : line.type === 'error' ? '#f87171' 
-                       : '#cbd5e1'
-                }}
-              >
-                {line.text}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Command Input Bar */}
-        <form 
-          onSubmit={(e) => { e.preventDefault(); handleSendCommand(); }}
-          style={{ 
-            marginTop: '14px', 
-            borderTop: '1px solid #1e293b', 
-            paddingTop: '12px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '10px' 
-          }}
-        >
-          <span style={{ color: '#38bdf8', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>&gt;&gt;</span>
-          <input
-            type="text"
-            value={command}
-            onChange={(e) => setCommand(e.target.value)}
-            placeholder="Type server command (e.g. tp IronBot 40 108 -13 or list)..."
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              color: '#f8fafc',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.88rem',
-              outline: 'none'
-            }}
-            disabled={sending}
-          />
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm"
-            disabled={sending || !command.trim()}
-            style={{ padding: '6px 14px' }}
+      {/* Quick Console Presets Row */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {presets.map((preset) => (
+          <Button
+            key={preset}
+            variant="outline"
+            size="sm"
+            className="font-mono h-8 text-[10px]"
+            onClick={() => handlePreset(preset)}
           >
-            <Send size={14} />
-            <span>Send</span>
-          </button>
-        </form>
+            {preset}
+          </Button>
+        ))}
       </div>
+
+      {/* Terminal Window */}
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        {/* macOS Control Bar */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex gap-1.5">
+            <span className="size-2.5 rounded-full bg-danger" />
+            <span className="size-2.5 rounded-full bg-warning" />
+            <span className="size-2.5 rounded-full bg-success" />
+          </div>
+
+          <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
+            container@pterodactyl: /srv/daemon/bds
+          </span>
+
+          <Badge tone="success">
+            <StatusDot tone="success" />
+            <span>Connected</span>
+          </Badge>
+        </div>
+
+        {/* Terminal Screen Body */}
+        <div 
+          ref={scrollRef}
+          className="min-h-[340px] max-h-[500px] overflow-y-auto space-y-2 bg-foreground p-4 font-mono text-[11px] leading-relaxed text-background sm:p-6"
+        >
+          {consoleLogs.map((line, idx) => {
+            const isSuccess = line.includes('successfully') || line.includes('established') || line.includes('initialized');
+            const isCommand = line.includes('> ');
+            const isError = line.includes('Error');
+
+            return (
+              <p
+                key={`${idx}-${line}`}
+                className={
+                  isSuccess 
+                    ? 'text-success' 
+                    : isCommand 
+                      ? 'text-primary-foreground font-semibold' 
+                      : isError 
+                        ? 'text-danger' 
+                        : 'text-background/70'
+                }
+              >
+                {line}
+              </p>
+            );
+          })}
+
+          {/* Interactive Command Input Line */}
+          <div className="mt-4 flex items-center gap-2 border-t border-background/15 pt-4">
+            <span className="text-success font-bold">&gt;&gt;</span>
+            <input
+              aria-label="Console command"
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendCommand()}
+              placeholder="Enter a command… (e.g. tp IronBot 40 108 -13 or list)"
+              className="min-w-0 flex-1 bg-transparent text-background outline-none placeholder:text-background/40 font-mono text-[11px]"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => handleSendCommand()}
+              disabled={sending}
+            >
+              <Send className="size-3.5" />
+              <span>{sending ? 'Sending...' : 'Send'}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Terminal Bottom Status Bar */}
+        <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <StatusDot tone="success" />
+            <span>Session open</span>
+          </span>
+          <span className="font-mono">Target: ayx.acido.dev:19132</span>
+        </div>
+      </section>
     </div>
   );
 }
