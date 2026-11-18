@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 console.log('======================================================');
-console.log('   Starting OUR SMP Control Center (Server + Client)  ');śś
+console.log('   Starting OUR SMP Control Center (Server + Client)  ');
 console.log('======================================================');
 
 const isWin = process.platform === 'win32';

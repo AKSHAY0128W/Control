@@ -1,5 +1,5 @@
 import express from 'express';
-import { state, logActivity } from '../models/db.js';
+import { state, logActivity, saveStateToFile } from '../models/db.js';
 import { executeManualTeleport } from '../services/autoTeleportEngine.js';
 import { renderService } from '../services/renderService.js';
 import { broadcast } from '../websocket/wsServer.js';
@@ -51,6 +51,7 @@ botsRouter.post('/', async (req, res) => {
   };
 
   state.bots.push(newBot);
+  saveStateToFile();
   logActivity('BOT_REGISTERED', `New bot registered: ${newBot.name} (Assigned to: ${newBot.assignedFarm})`, 'info', 'BotManager');
   broadcast({ type: 'BOTS_UPDATE', payload: state.bots });
 
@@ -82,6 +83,7 @@ botsRouter.patch('/:id', async (req, res) => {
   if (autoTeleport !== undefined) bot.autoTeleport = Boolean(autoTeleport);
   if (status !== undefined) bot.status = status;
 
+  saveStateToFile();
   logActivity('BOT_CONFIG_UPDATED', `Updated configuration for ${bot.name} (Target: ${bot.targetCoordinates.x}, ${bot.targetCoordinates.y}, ${bot.targetCoordinates.z})`, 'info', 'BotManager');
   broadcast({ type: 'BOTS_UPDATE', payload: state.bots });
 
@@ -103,6 +105,7 @@ botsRouter.post('/:id/toggle', async (req, res) => {
     bot.status = 'connecting';
   }
 
+  saveStateToFile();
   logActivity('BOT_TOGGLED', `Bot ${bot.name} ${bot.enabled ? 'started / enabled' : 'paused / stopped'} from control panel`, 'info', 'BotManager');
   broadcast({ type: 'BOTS_UPDATE', payload: state.bots });
 
@@ -125,6 +128,7 @@ botsRouter.delete('/:id', async (req, res) => {
   if (index === -1) return res.status(404).json({ success: false, error: 'Bot not found' });
 
   const removed = state.bots.splice(index, 1)[0];
+  saveStateToFile();
   logActivity('BOT_REMOVED', `Bot removed: ${removed.name}`, 'warning', 'BotManager');
   broadcast({ type: 'BOTS_UPDATE', payload: state.bots });
 

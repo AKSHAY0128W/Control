@@ -1,5 +1,5 @@
 import express from 'express';
-import { state, logActivity } from '../models/db.js';
+import { state, logActivity, saveStateToFile } from '../models/db.js';
 import { sendConsoleCommand, fetchServerResources } from '../services/pterodactylService.js';
 import { renderService } from '../services/renderService.js';
 import { broadcast } from '../websocket/wsServer.js';
@@ -24,7 +24,7 @@ settingsRouter.get('/', (req, res) => {
   // Mask Render API Key & provide render info
   if (!settingsCopy.render) {
     settingsCopy.render = {
-      serviceUrl: process.env.RENDER_BOT_SERVICE_URL || '',
+      serviceUrl: process.env.RENDER_BOT_SERVICE_URL || 'https://afk-nqeu.onrender.com',
       serviceId: process.env.RENDER_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
       keepAlive: true
     };
@@ -67,6 +67,7 @@ settingsRouter.post('/', (req, res) => {
     if (render.keepAlive !== undefined) state.settings.render.keepAlive = Boolean(render.keepAlive);
   }
 
+  saveStateToFile();
   logActivity('SETTINGS_UPDATED', 'Control Center settings were updated.', 'info', 'Settings');
   broadcast({ type: 'SETTINGS_UPDATE', payload: state.settings });
 

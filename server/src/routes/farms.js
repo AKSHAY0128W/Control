@@ -1,5 +1,5 @@
 import express from 'express';
-import { state, logActivity } from '../models/db.js';
+import { state, logActivity, saveStateToFile } from '../models/db.js';
 import { broadcast } from '../websocket/wsServer.js';
 
 export const farmsRouter = express.Router();
@@ -35,6 +35,7 @@ farmsRouter.post('/', (req, res) => {
   };
 
   state.farms.push(newFarm);
+  saveStateToFile();
   logActivity('FARM_CREATED', `New farm registered: ${name} at (${newFarm.coordinates.x}, ${newFarm.coordinates.y}, ${newFarm.coordinates.z})`, 'info', 'FarmManager');
   broadcast({ type: 'FARMS_UPDATE', payload: state.farms });
 
@@ -59,6 +60,7 @@ farmsRouter.patch('/:id', (req, res) => {
   if (description !== undefined) farm.description = description;
   if (status !== undefined) farm.status = status;
 
+  saveStateToFile();
   logActivity('FARM_UPDATED', `Updated farm ${farm.name} coordinates to (${farm.coordinates.x}, ${farm.coordinates.y}, ${farm.coordinates.z})`, 'info', 'FarmManager');
   broadcast({ type: 'FARMS_UPDATE', payload: state.farms });
 
