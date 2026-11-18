@@ -15,7 +15,10 @@ import {
 } from 'lucide-react';
 
 export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed }) {
-  const { activeTab, setActiveTab, user, logout, serverMetrics } = useControlCenter();
+  const { activeTab, setActiveTab, user, logout, bots } = useControlCenter();
+
+  const activeBotsCount = Array.isArray(bots) ? bots.filter(b => b.enabled !== false && b.status === 'online').length : 0;
+  const totalBotsCount = Array.isArray(bots) ? bots.length : 0;
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -23,7 +26,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed }) {
       id: 'bots', 
       label: 'Bot Manager', 
       icon: Bot, 
-      count: serverMetrics?.playerCount ? `${serverMetrics.playerCount} in-game` : '2 in-game' 
+      count: totalBotsCount > 0 ? (activeBotsCount > 0 ? `${activeBotsCount} online` : `${totalBotsCount} registered`) : null 
     },
     { id: 'farms', label: 'Farm Loaders', icon: Layers },
     { id: 'console', label: 'Server Console', icon: Terminal },
