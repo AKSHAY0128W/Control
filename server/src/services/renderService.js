@@ -6,8 +6,8 @@ let keepAliveInterval = null;
 export const renderService = {
   getConfig() {
     return {
-      serviceUrl: (state.settings?.render?.serviceUrl || process.env.RENDER_BOT_SERVICE_URL || '').replace(/\/$/, ''),
-      serviceId: state.settings?.render?.serviceId || process.env.RENDER_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
+      serviceUrl: (state.settings?.render?.serviceUrl || process.env.RENDER_BOT_SERVICE_URL || 'https://afk-nqeu.onrender.com').replace(/\/$/, ''),
+      serviceId: state.settings?.render?.serviceId || process.env.RENDER_BOT_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
       apiKey: state.settings?.render?.apiKey || process.env.RENDER_API_KEY || '',
       keepAlive: state.settings?.render?.keepAlive !== false,
       lastPing: state.settings?.render?.lastPing || null,

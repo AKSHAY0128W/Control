@@ -25,7 +25,7 @@ settingsRouter.get('/', (req, res) => {
   if (!settingsCopy.render) {
     settingsCopy.render = {
       serviceUrl: process.env.RENDER_BOT_SERVICE_URL || 'https://afk-nqeu.onrender.com',
-      serviceId: process.env.RENDER_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
+      serviceId: process.env.RENDER_BOT_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
       keepAlive: true
     };
   }

@@ -22,68 +22,8 @@ export const state = {
       createdAt: new Date().toISOString()
     }
   ],
-  bots: [
-    {
-      id: 'ironbot',
-      name: 'IronBot',
-      username: 'IronBot',
-      serverAddress: `${config.bedrock.host}:${config.bedrock.port}`,
-      assignedFarm: 'Iron Farm 1',
-      targetCoordinates: { x: 40, y: 108, z: -13 },
-      currentCoordinates: { x: 0, y: 64, z: 0 },
-      dimension: 'Overworld',
-      status: 'offline', // 'online' | 'reconnecting' | 'offline' | 'misplaced'
-      autoTeleport: true,
-      lastConnected: null,
-      lastDisconnected: null,
-      reconnectCount: 0,
-      uptimeSeconds: 0,
-      lastError: 'Bot agent not connected'
-    },
-    {
-      id: 'ironbot2',
-      name: 'IronBot2',
-      username: 'IronBot2',
-      serverAddress: `${config.bedrock.host}:${config.bedrock.port}`,
-      assignedFarm: 'Iron Farm 2',
-      targetCoordinates: { x: -239, y: 73, z: -162 },
-      currentCoordinates: { x: 0, y: 64, z: 0 },
-      dimension: 'Overworld',
-      status: 'offline',
-      autoTeleport: true,
-      lastConnected: null,
-      lastDisconnected: null,
-      reconnectCount: 0,
-      uptimeSeconds: 0,
-      lastError: 'Bot agent not connected'
-    }
-  ],
-  farms: [
-    {
-      id: 'farm-1',
-      name: 'Iron Farm 1',
-      type: 'Iron Farm',
-      dimension: 'Overworld',
-      coordinates: { x: 40, y: 108, z: -13 },
-      assignedBot: 'IronBot',
-      description: 'Primary iron golem farm chunk loader',
-      expectedResources: 'Iron Ingot, Poppy',
-      status: 'active',
-      lastVerified: new Date().toISOString()
-    },
-    {
-      id: 'farm-2',
-      name: 'Iron Farm 2',
-      type: 'Iron Farm',
-      dimension: 'Overworld',
-      coordinates: { x: -239, y: 73, z: -162 },
-      assignedBot: 'IronBot2',
-      description: 'Secondary outpost iron farm',
-      expectedResources: 'Iron Ingot, Poppy',
-      status: 'active',
-      lastVerified: new Date().toISOString()
-    }
-  ],
+  bots: [],
+  farms: [],
   activityLogs: [
     {
       id: 'log-1',
@@ -123,7 +63,7 @@ export const state = {
     },
     render: {
       serviceUrl: process.env.RENDER_BOT_SERVICE_URL || 'https://afk-nqeu.onrender.com',
-      serviceId: process.env.RENDER_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
+      serviceId: process.env.RENDER_BOT_SERVICE_ID || 'srv-cba31dh5efls73cocdm0',
       apiKey: process.env.RENDER_API_KEY || '',
       keepAlive: true,
       lastPing: null,

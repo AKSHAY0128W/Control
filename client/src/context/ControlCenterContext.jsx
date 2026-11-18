@@ -308,6 +308,16 @@ export function ControlCenterProvider({ children }) {
     return res;
   };
 
+  const deleteFarm = async (farmId) => {
+    const res = await api.deleteFarm(farmId);
+    if (res?.success) {
+      const updated = await api.getFarms();
+      if (updated?.success) setFarms(updated.data);
+      setLastNotification({ type: 'info', text: 'Farm removed successfully' });
+    }
+    return res;
+  };
+
   const refreshServer = async () => {
     const res = await api.pollServer();
     if (res?.success) {
@@ -364,6 +374,7 @@ export function ControlCenterProvider({ children }) {
         updateFarm,
         createFarm,
         addFarm: createFarm,
+        deleteFarm,
         refreshServer,
         sendConsoleCommand,
         updateSettings,

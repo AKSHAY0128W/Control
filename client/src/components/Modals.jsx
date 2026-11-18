@@ -368,6 +368,7 @@ export function AddFarmModal({ onClose }) {
   const { addFarm, bots, setLastNotification } = useControlCenter();
   const [name, setName] = useState('');
   const [type, setType] = useState('Iron Farm');
+  const [customType, setCustomType] = useState('');
   const [dimension, setDimension] = useState('Overworld');
   const [x, setX] = useState(0);
   const [y, setY] = useState(64);
@@ -379,11 +380,13 @@ export function AddFarmModal({ onClose }) {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const resolvedType = type === 'Custom Farm' ? (customType.trim() || 'Custom Farm') : type;
+
     setSubmitting(true);
     try {
       await addFarm({
         name: name.trim(),
-        type,
+        type: resolvedType,
         dimension,
         coordinates: { x: Number(x), y: Number(y), z: Number(z) },
         x: Number(x),
@@ -422,7 +425,7 @@ export function AddFarmModal({ onClose }) {
           label="Farm Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Iron Farm 3"
+          placeholder="e.g. Outpost Slime Farm"
           required
         />
 
@@ -439,6 +442,7 @@ export function AddFarmModal({ onClose }) {
               <option value="Raid Farm">Raid Farm</option>
               <option value="Crop Farm">Crop Farm</option>
               <option value="Mob Farm">Mob Farm</option>
+              <option value="Custom Farm">Custom Farm (Specify below)</option>
             </select>
           </label>
 
@@ -455,6 +459,16 @@ export function AddFarmModal({ onClose }) {
             </select>
           </label>
         </div>
+
+        {type === 'Custom Farm' && (
+          <InputField
+            label="Custom Farm Type"
+            value={customType}
+            onChange={(e) => setCustomType(e.target.value)}
+            placeholder="e.g. Copper Farm, Slime Farm, Witch Hut"
+            required
+          />
+        )}
 
         {bots.length > 0 && (
           <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
@@ -519,9 +533,14 @@ export function AddFarmModal({ onClose }) {
 
 // 5. Edit Farm Modal
 export function EditFarmModal({ farm, onClose }) {
-  const { updateFarm, bots, setLastNotification } = useControlCenter();
+  const { updateFarm, deleteFarm, bots, setLastNotification } = useControlCenter();
   const [name, setName] = useState(farm?.name || '');
-  const [type, setType] = useState(farm?.type || 'Iron Farm');
+  
+  const standardTypes = ['Iron Farm', 'Gold Farm', 'Raid Farm', 'Crop Farm', 'Mob Farm'];
+  const isCustomType = farm?.type && !standardTypes.includes(farm.type);
+  const [type, setType] = useState(isCustomType ? 'Custom Farm' : (farm?.type || 'Iron Farm'));
+  const [customType, setCustomType] = useState(isCustomType ? farm.type : '');
+  
   const [dimension, setDimension] = useState(farm?.dimension || 'Overworld');
   const [x, setX] = useState(farm?.coordinates?.x ?? farm?.x ?? 0);
   const [y, setY] = useState(farm?.coordinates?.y ?? farm?.y ?? 64);
@@ -532,10 +551,11 @@ export function EditFarmModal({ farm, onClose }) {
   const handleSave = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const resolvedType = type === 'Custom Farm' ? (customType.trim() || 'Custom Farm') : type;
     try {
       await updateFarm(farm.id, {
         name: name.trim(),
-        type,
+        type: resolvedType,
         dimension,
         coordinates: { x: Number(x), y: Number(y), z: Number(z) },
         assignedBot
@@ -587,6 +607,7 @@ export function EditFarmModal({ farm, onClose }) {
               <option value="Raid Farm">Raid Farm</option>
               <option value="Crop Farm">Crop Farm</option>
               <option value="Mob Farm">Mob Farm</option>
+              <option value="Custom Farm">Custom Farm (Specify below)</option>
             </select>
           </label>
 
@@ -603,6 +624,16 @@ export function EditFarmModal({ farm, onClose }) {
             </select>
           </label>
         </div>
+
+        {type === 'Custom Farm' && (
+          <InputField
+            label="Custom Farm Type"
+            value={customType}
+            onChange={(e) => setCustomType(e.target.value)}
+            placeholder="e.g. Copper Farm, Slime Farm, Witch Hut"
+            required
+          />
+        )}
 
         <div className="space-y-1.5">
           <span className="text-[11px] font-medium text-muted-foreground">Coordinates</span>
@@ -634,13 +665,29 @@ export function EditFarmModal({ farm, onClose }) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button variant="outline" size="sm" onClick={onClose} type="button">
-            Cancel
+        <div className="flex items-center justify-between border-t border-border pt-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            type="button" 
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+            onClick={async () => {
+              if (window.confirm(`Delete farm "${farm?.name}"?`)) {
+                await deleteFarm(farm.id);
+                onClose();
+              }
+            }}
+          >
+            Delete farm
           </Button>
-          <Button size="sm" type="submit" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save changes'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onClose} type="button">
+              Cancel
+            </Button>
+            <Button size="sm" type="submit" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Save changes'}
+            </Button>
+          </div>
         </div>
       </form>
     </ModalWrapper>

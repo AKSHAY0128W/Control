@@ -66,3 +66,16 @@ farmsRouter.patch('/:id', (req, res) => {
 
   res.json({ success: true, data: farm });
 });
+
+// DELETE remove farm
+farmsRouter.delete('/:id', (req, res) => {
+  const index = state.farms.findIndex(f => f.id === req.params.id);
+  if (index === -1) return res.status(404).json({ success: false, error: 'Farm not found' });
+
+  const removed = state.farms.splice(index, 1)[0];
+  saveStateToFile();
+  logActivity('FARM_DELETED', `Farm removed: ${removed.name}`, 'warning', 'FarmManager');
+  broadcast({ type: 'FARMS_UPDATE', payload: state.farms });
+
+  res.json({ success: true, message: `Farm ${removed.name} removed successfully` });
+});

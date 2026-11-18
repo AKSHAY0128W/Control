@@ -52,6 +52,7 @@ export const api = {
   getFarms: () => request('/farms'),
   createFarm: (data) => request('/farms', { method: 'POST', body: JSON.stringify(data) }),
   updateFarm: (id, data) => request(`/farms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteFarm: (id) => request(`/farms/${id}`, { method: 'DELETE' }),
 
   // Settings & Console
   getSettings: () => request('/settings'),

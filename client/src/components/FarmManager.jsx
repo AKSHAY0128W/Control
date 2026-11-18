@@ -14,12 +14,19 @@ import {
   Plus, 
   MoreVertical, 
   Zap, 
-  Pencil 
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 export function FarmManager({ onOpenAddFarm, onOpenEditFarm }) {
-  const { farms, bots, teleportBot, setLastNotification } = useControlCenter();
+  const { farms, bots, teleportBot, deleteFarm, setLastNotification } = useControlCenter();
   const [teleportingFarmId, setTeleportingFarmId] = useState(null);
+
+  const handleDeleteFarm = async (farm) => {
+    if (window.confirm(`Are you sure you want to remove farm "${farm.name}"?`)) {
+      await deleteFarm(farm.id);
+    }
+  };
 
   const handleTeleportBotToFarm = async (farm) => {
     const assignedBot = bots.find(
@@ -133,17 +140,28 @@ export function FarmManager({ onOpenAddFarm, onOpenEditFarm }) {
                     </div>
                   </div>
 
-                  {onOpenEditFarm && (
+                  <div className="flex items-center gap-1">
+                    {onOpenEditFarm && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                        aria-label={`Edit ${farm.name}`}
+                        onClick={() => onOpenEditFarm(farm)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-8 text-muted-foreground hover:text-foreground"
-                      aria-label={`Edit ${farm.name}`}
-                      onClick={() => onOpenEditFarm(farm)}
+                      className="size-8 text-muted-foreground hover:text-destructive cursor-pointer"
+                      aria-label={`Delete ${farm.name}`}
+                      onClick={() => handleDeleteFarm(farm)}
                     >
-                      <Pencil className="size-3.5" />
+                      <Trash2 className="size-3.5" />
                     </Button>
-                  )}
+                  </div>
                 </div>
 
                 {/* Target Coordinates Box */}
