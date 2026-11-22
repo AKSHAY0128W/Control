@@ -37,7 +37,7 @@ export function Badge({ children, tone = 'neutral', className = '' }) {
 // Page Header with eyebrow, H1, description and action buttons
 export function PageHeader({ eyebrow, title, detail, actions }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4 scroll-mt-20">
       <div>
         {eyebrow && (
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">

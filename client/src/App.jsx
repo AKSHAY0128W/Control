@@ -57,7 +57,7 @@ function DashboardLayout() {
         />
 
         {/* Main Content Area */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto h-screen">
           {/* Top Application Header */}
           <TopHeader 
             isCollapsed={isCollapsed} 
@@ -67,7 +67,7 @@ function DashboardLayout() {
 
           {/* Page Body Container */}
           <main className="flex-1">
-            <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-12 sm:px-6 lg:px-8">
               {/* Notification Toast Alert */}
               {lastNotification && (
                 <div 

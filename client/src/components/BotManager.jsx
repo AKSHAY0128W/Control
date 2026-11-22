@@ -152,17 +152,19 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {bots.map((bot) => {
-            const isEnabled = bot.enabled !== false && bot.active !== false;
+            const isEnabled = bot.enabled !== false && (bot.status === 'online' || bot.status === 'connecting' || bot.status === 'reconnecting');
             const autoTp = bot.autoTeleport ?? bot.autoTp ?? true;
 
             // Target coordinates from assigned farm or bot object
             const farm = farms.find(f => f.id === bot.farmId || f.name === bot.assignedFarm || f.name === bot.targetFarm);
-            const targetCoords = bot.targetCoordinates || (farm ? { x: farm.x, y: farm.y, z: farm.z } : { x: bot.x ?? 0, y: bot.y ?? 64, z: bot.z ?? 0 });
+            const targetCoords = bot.targetCoordinates || (farm ? { x: farm.coordinates?.x ?? farm.x ?? 0, y: farm.coordinates?.y ?? farm.y ?? 64, z: farm.coordinates?.z ?? farm.z ?? 0 } : { x: bot.x ?? 0, y: bot.y ?? 64, z: bot.z ?? 0 });
             const currentCoords = bot.currentCoordinates || { x: bot.x ?? 0, y: bot.y ?? 64, z: bot.z ?? 0 };
 
             const distance = calculateDistance(targetCoords, currentCoords);
             const isAtFarm = distance <= 10;
-            const statusTone = isEnabled ? (isAtFarm ? 'success' : 'warning') : 'neutral';
+            const statusTone = bot.status === 'online' ? (isAtFarm ? 'success' : 'warning') 
+              : bot.status === 'connecting' || bot.status === 'reconnecting' ? 'warning' 
+              : 'neutral';
             const isTeleporting = teleportingId === bot.id;
 
             return (
@@ -192,12 +194,21 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
 
                     <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                       <StatusDot tone={isEnabled ? 'success' : 'muted'} />
-                      <span>{isEnabled ? 'Connected · in game' : 'Paused'}</span>
+                      <span>
+                        {bot.status === 'online' ? 'Connected · in game' 
+                          : bot.status === 'connecting' ? 'Connecting...'
+                          : bot.status === 'reconnecting' ? 'Reconnecting...'
+                          : 'Paused · not in game'}
+                      </span>
                     </div>
                   </div>
 
                   <Badge tone={statusTone}>
-                    {isEnabled ? (isAtFarm ? 'Online · at farm' : 'Misplaced') : 'Paused'}
+                    {bot.status === 'online' 
+                      ? (isAtFarm ? 'Online · at farm' : 'Misplaced') 
+                      : bot.status === 'connecting' ? 'Connecting...'
+                      : bot.status === 'reconnecting' ? 'Reconnecting...'
+                      : 'Paused'}
                   </Badge>
 
                   <Button

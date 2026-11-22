@@ -132,7 +132,7 @@ export function OverviewView() {
           <MetricCard
             label="Online players"
             value={`${serverMetrics?.playerCount || 0} / ${serverMetrics?.maxPlayers || 10}`}
-            meta={`${activeBotsCount} AFK bots`}
+            meta={`${bots.length} bot${bots.length !== 1 ? 's' : ''} registered`}
             icon={Users}
             accent={true}
           />

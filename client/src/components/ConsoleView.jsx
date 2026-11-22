@@ -8,14 +8,29 @@ export function ConsoleView() {
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
+  const [initDone, setInitDone] = useState(false);
 
-  const targetAddress = serverMetrics?.serverAddress || `${settings?.bedrock?.host || 'ayx.acido.dev'}:${settings?.bedrock?.port || 19132}`;
+  const targetAddress = serverMetrics?.serverAddress || `${settings?.bedrock?.host || ''}:${settings?.bedrock?.port || 19132}`;
 
   const [consoleLogs, setConsoleLogs] = useState([
-    `[${new Date().toLocaleTimeString('en-US')}] BDS connection established · ${settings?.bedrock?.transport || 'NetherNet'} transport`,
-    `[${new Date().toLocaleTimeString('en-US')}] Target Bedrock Server: ${targetAddress}`,
-    `[${new Date().toLocaleTimeString('en-US')}] Pterodactyl command dispatcher ready for ${settings?.pterodactyl?.serverId || 'container@pterodactyl'}`
+    `[${new Date().toLocaleTimeString('en-US')}] BDS connection established · NetherNet transport`,
+    `[${new Date().toLocaleTimeString('en-US')}] Pterodactyl command dispatcher ready`,
   ]);
+
+  // Update the initial logs once settings are available
+  useEffect(() => {
+    if (initDone || !settings?.bedrock?.host) return;
+    setInitDone(true);
+    const time = new Date().toLocaleTimeString('en-US');
+    const transport = settings?.bedrock?.transport || 'NetherNet';
+    const addr = serverMetrics?.serverAddress || `${settings.bedrock.host}:${settings.bedrock.port || 19132}`;
+    const ptero = settings?.pterodactyl?.serverId || 'container@pterodactyl';
+    setConsoleLogs([
+      `[${time}] BDS connection established · ${transport} transport`,
+      `[${time}] Target Bedrock Server: ${addr}`,
+      `[${time}] Pterodactyl command dispatcher ready for ${ptero}`,
+    ]);
+  }, [settings, serverMetrics, initDone]);
 
   useEffect(() => {
     if (scrollRef.current) {
