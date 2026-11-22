@@ -51,6 +51,12 @@ export const state = {
     diskUsage: null
   },
   settings: {
+    bedrock: {
+      host: config.bedrock.host,
+      port: config.bedrock.port,
+      worldName: 'CherryVale SMP',
+      transport: config.bedrock.transport || 'nethernet',
+    },
     pterodactyl: {
       panelUrl: config.pterodactyl.panelUrl,
       apiKey: config.pterodactyl.apiKey,
@@ -102,6 +108,10 @@ export function loadStateFromFile() {
         state.settings = {
           ...state.settings,
           ...loaded.settings,
+          bedrock: {
+            ...state.settings.bedrock,
+            ...(loaded.settings.bedrock || {})
+          },
           render: {
             ...state.settings.render,
             ...(loaded.settings.render || {})

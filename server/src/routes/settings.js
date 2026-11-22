@@ -2,6 +2,7 @@ import express from 'express';
 import { state, logActivity, saveStateToFile } from '../models/db.js';
 import { sendConsoleCommand, fetchServerResources } from '../services/pterodactylService.js';
 import { renderService } from '../services/renderService.js';
+import { pollBedrockServer, testBedrockTarget } from '../services/serverMonitor.js';
 import { broadcast } from '../websocket/wsServer.js';
 
 export const settingsRouter = express.Router();
@@ -9,6 +10,16 @@ export const settingsRouter = express.Router();
 // GET current settings
 settingsRouter.get('/', (req, res) => {
   const settingsCopy = JSON.parse(JSON.stringify(state.settings || {}));
+
+  // Ensure Bedrock target settings exist
+  if (!settingsCopy.bedrock) {
+    settingsCopy.bedrock = {
+      host: 'ayx.acido.dev',
+      port: 19132,
+      worldName: 'CherryVale SMP',
+      transport: 'nethernet'
+    };
+  }
 
   // Mask Pterodactyl key
   if (settingsCopy.pterodactyl?.apiKey) {
@@ -43,7 +54,32 @@ settingsRouter.get('/', (req, res) => {
 
 // POST update settings
 settingsRouter.post('/', (req, res) => {
-  const { pterodactyl, autoTeleport, render } = req.body;
+  const { bedrock, pterodactyl, autoTeleport, render } = req.body;
+
+  let bedrockChanged = false;
+  if (bedrock) {
+    if (!state.settings.bedrock) state.settings.bedrock = {};
+    if (bedrock.host !== undefined) {
+      const cleanHost = String(bedrock.host).trim();
+      if (cleanHost && cleanHost !== state.settings.bedrock.host) {
+        state.settings.bedrock.host = cleanHost;
+        bedrockChanged = true;
+      }
+    }
+    if (bedrock.port !== undefined) {
+      const cleanPort = parseInt(bedrock.port, 10) || 19132;
+      if (cleanPort !== state.settings.bedrock.port) {
+        state.settings.bedrock.port = cleanPort;
+        bedrockChanged = true;
+      }
+    }
+    if (bedrock.worldName !== undefined) {
+      state.settings.bedrock.worldName = String(bedrock.worldName).trim() || 'CherryVale SMP';
+    }
+    if (bedrock.transport !== undefined) {
+      state.settings.bedrock.transport = String(bedrock.transport).trim() || 'nethernet';
+    }
+  }
 
   if (pterodactyl) {
     if (!state.settings.pterodactyl) state.settings.pterodactyl = {};
@@ -68,8 +104,14 @@ settingsRouter.post('/', (req, res) => {
   }
 
   saveStateToFile();
-  logActivity('SETTINGS_UPDATED', 'Control Center settings were updated.', 'info', 'Settings');
+  logActivity('SETTINGS_UPDATED', `Control Center settings updated.${bedrockChanged ? ` Target BDS changed to ${state.settings.bedrock.host}:${state.settings.bedrock.port}` : ''}`, 'info', 'Settings');
   broadcast({ type: 'SETTINGS_UPDATE', payload: state.settings });
+
+  // If bedrock target changed, poll immediately and notify Render AFK bots to reconnect
+  if (bedrockChanged) {
+    pollBedrockServer().catch(() => {});
+    renderService.notifyRenderService().catch(() => {});
+  }
 
   // If render was updated, trigger a ping / test
   if (render?.serviceUrl) {
@@ -77,6 +119,13 @@ settingsRouter.post('/', (req, res) => {
   }
 
   res.json({ success: true, message: 'Settings saved successfully' });
+});
+
+// POST test Bedrock BDS connection
+settingsRouter.post('/test-bedrock', async (req, res) => {
+  const { host, port } = req.body;
+  const result = await testBedrockTarget(host, port);
+  res.json(result);
 });
 
 // POST test Pterodactyl connection

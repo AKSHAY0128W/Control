@@ -4,12 +4,14 @@ import { Button } from './ui/Shared';
 import { Server, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export function LoginView() {
-  const { login } = useControlCenter();
+  const { login, serverMetrics, settings } = useControlCenter();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('smpadmin2026');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const targetAddress = serverMetrics?.serverAddress || (settings?.bedrock?.host ? `${settings.bedrock.host}:${settings.bedrock.port || 19132}` : 'BDS 1.26.61');
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -64,7 +66,7 @@ export function LoginView() {
           {/* Server Target Pill */}
           <div className="mb-5 flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2.5">
             <span className="text-[11px] text-muted-foreground">Server target</span>
-            <span className="font-mono text-xs text-foreground">ayx.acido.dev:19132</span>
+            <span className="font-mono text-xs text-foreground">{targetAddress}</span>
           </div>
 
           {/* 1-Click Default Demo Credentials */}

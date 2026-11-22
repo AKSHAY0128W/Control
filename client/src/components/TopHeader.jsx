@@ -19,7 +19,8 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
     teleportAllBotsToFarms, 
     refreshServer,
     theme,
-    toggleTheme 
+    toggleTheme,
+    settings
   } = useControlCenter();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -34,6 +35,8 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
     security: 'Security & Auth',
   };
 
+  const worldName = serverMetrics?.worldName || settings?.bedrock?.worldName || 'CherryVale SMP';
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -44,10 +47,10 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
   };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-sm">
-      <div className="flex h-[76px] items-center justify-between gap-3 px-4 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-border bg-card shadow-xs">
+      <div className="flex h-16 items-center justify-between gap-2 px-3 sm:px-6">
         {/* Left: Collapse / Mobile toggle & Titles */}
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           {/* Desktop Sidebar Toggle */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -72,26 +75,26 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
             <h2 className="truncate text-sm font-semibold text-foreground">
               {titles[activeTab] || 'Server Overview & Monitoring'}
             </h2>
-            <p className="hidden text-[11px] text-muted-foreground sm:block">
-              CherryVale SMP <span className="mx-1">/</span> Production
+            <p className="hidden text-[11px] text-muted-foreground sm:block truncate">
+              {worldName} <span className="mx-1">/</span> Production
             </p>
           </div>
         </div>
 
         {/* Right: Badges, Controls, Fast Action */}
-        <div className="flex items-center gap-2">
-          {/* Desktop Status Badges */}
-          <div className="hidden items-center gap-2 lg:flex">
-            <Badge tone={serverMetrics?.online ? 'success' : 'danger'}>
-              <StatusDot tone={serverMetrics?.online ? 'success' : 'danger'} />
-              <span>{serverMetrics?.online ? 'BDS ONLINE' : 'BDS OFFLINE'}</span>
-            </Badge>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Status Badge */}
+          <Badge tone={serverMetrics?.online ? 'success' : 'danger'} className="text-xs">
+            <StatusDot tone={serverMetrics?.online ? 'success' : 'danger'} />
+            <span className="hidden sm:inline">{serverMetrics?.online ? 'BDS ONLINE' : 'BDS OFFLINE'}</span>
+            <span className="sm:hidden">{serverMetrics?.online ? 'ONLINE' : 'OFFLINE'}</span>
+          </Badge>
 
-            <Badge tone={wsConnected ? 'neutral' : 'warning'}>
-              <Wifi className="size-3" />
-              <span>{wsConnected ? 'WS Live' : 'Reconnecting'}</span>
-            </Badge>
-          </div>
+          {/* WS Live Badge (Desktop & Tablet) */}
+          <Badge tone={wsConnected ? 'neutral' : 'warning'} className="hidden sm:inline-flex text-xs">
+            <Wifi className="size-3" />
+            <span>{wsConnected ? 'WS Live' : 'Reconnecting'}</span>
+          </Badge>
 
           {/* Refresh Button */}
           <Button
@@ -100,9 +103,9 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
             onClick={handleRefresh}
             title="Refresh dashboard"
             aria-label="Refresh dashboard"
-            className="size-9 text-muted-foreground hover:text-foreground"
+            className="size-8 sm:size-9 text-muted-foreground hover:text-foreground"
           >
-            <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-3.5 sm:size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
 
           {/* Light / Dark Mode Toggle */}
@@ -112,35 +115,22 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            className="size-9 text-muted-foreground hover:text-foreground"
+            className="size-8 sm:size-9 text-muted-foreground hover:text-foreground"
           >
-            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            {theme === 'dark' ? <Sun className="size-3.5 sm:size-4" /> : <Moon className="size-3.5 sm:size-4" />}
           </Button>
 
           {/* Primary Action: Teleport all bots */}
           <Button
             onClick={teleportAllBotsToFarms}
             size="sm"
-            className="h-9 gap-2 px-3 text-xs shadow-sm"
+            className="h-8 sm:h-9 gap-1.5 sm:gap-2 px-2.5 sm:px-3 text-xs shadow-xs"
           >
             <Zap className="size-3.5 fill-current" />
-            <span className="hidden sm:inline">Teleport all bots</span>
-            <span className="sm:hidden">Teleport all</span>
+            <span className="hidden md:inline">Teleport all bots</span>
+            <span className="md:hidden">Teleport all</span>
           </Button>
         </div>
-      </div>
-
-      {/* Mobile Sub-strip */}
-      <div className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2 lg:hidden sm:px-6">
-        <Badge tone={serverMetrics?.online ? 'success' : 'danger'}>
-          <StatusDot tone={serverMetrics?.online ? 'success' : 'danger'} />
-          <span>{serverMetrics?.online ? 'BDS ONLINE' : 'BDS OFFLINE'}</span>
-        </Badge>
-        <span className="font-mono text-[10px] text-muted-foreground">ayx.acido.dev:19132</span>
-        <Badge tone={wsConnected ? 'neutral' : 'warning'} className="ml-auto">
-          <Wifi className="size-3" />
-          <span>{wsConnected ? 'WS Live' : 'Reconnecting'}</span>
-        </Badge>
       </div>
     </header>
   );

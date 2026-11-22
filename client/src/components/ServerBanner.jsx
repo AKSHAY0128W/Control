@@ -42,7 +42,7 @@ export function ServerBanner() {
       <div className="server-banner-grid">
         <div className="server-stat-box">
           <div className="stat-label">Server Address</div>
-          <div className="stat-value highlight mono" style={{ fontSize: '0.98rem' }}>ayx.acido.dev:19132</div>
+          <div className="stat-value highlight mono" style={{ fontSize: '0.98rem' }}>{serverMetrics.serverAddress || 'Target BDS'}</div>
         </div>
 
         <div className="server-stat-box">

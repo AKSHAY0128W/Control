@@ -4,16 +4,17 @@ import { PageHeader, Badge, StatusDot, Button } from './ui/Shared';
 import { Terminal, Send, CheckCircle2 } from 'lucide-react';
 
 export function ConsoleView() {
-  const { sendConsoleCommand, settings, bots, farms } = useControlCenter();
+  const { sendConsoleCommand, settings, bots, serverMetrics } = useControlCenter();
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
 
+  const targetAddress = serverMetrics?.serverAddress || `${settings?.bedrock?.host || 'ayx.acido.dev'}:${settings?.bedrock?.port || 19132}`;
+
   const [consoleLogs, setConsoleLogs] = useState([
-    `[9:14:47 PM] BDS connection established · NetherNet transport`,
-    `[9:14:47 PM] > list`,
-    `[9:14:47 PM] There are 2/10 players online: IronBot, IronBot2`,
-    `[9:15:02 PM] Pterodactyl command dispatcher initialized for container@pterodactyl`
+    `[${new Date().toLocaleTimeString('en-US')}] BDS connection established · ${settings?.bedrock?.transport || 'NetherNet'} transport`,
+    `[${new Date().toLocaleTimeString('en-US')}] Target Bedrock Server: ${targetAddress}`,
+    `[${new Date().toLocaleTimeString('en-US')}] Pterodactyl command dispatcher ready for ${settings?.pterodactyl?.serverId || 'container@pterodactyl'}`
   ]);
 
   useEffect(() => {
@@ -54,26 +55,18 @@ export function ConsoleView() {
   };
 
   const presets = [
-    'list',
-    'Teleport IronBot',
-    'Teleport IronBot2',
-    'time set day',
-    'weather clear',
-    'coords on'
+    { label: 'list', cmd: 'list' },
+    ...bots.map(b => ({
+      label: `TP ${b.name}`,
+      cmd: `tp ${b.name} ${b.targetCoordinates?.x ?? 0} ${b.targetCoordinates?.y ?? 64} ${b.targetCoordinates?.z ?? 0}`
+    })),
+    { label: 'time day', cmd: 'time set day' },
+    { label: 'weather clear', cmd: 'weather clear' },
+    { label: 'coords on', cmd: 'gamerule showcoordinates true' }
   ];
 
   const handlePreset = (preset) => {
-    if (preset === 'Teleport IronBot') {
-      const iron1 = farms.find(f => f.name?.includes('1')) || { x: 40, y: 108, z: -13 };
-      handleSendCommand(`tp IronBot ${iron1.x} ${iron1.y} ${iron1.z}`);
-    } else if (preset === 'Teleport IronBot2') {
-      const iron2 = farms.find(f => f.name?.includes('2')) || { x: -239, y: 73, z: -162 };
-      handleSendCommand(`tp IronBot2 ${iron2.x} ${iron2.y} ${iron2.z}`);
-    } else if (preset === 'coords on') {
-      handleSendCommand('gamerule showcoordinates true');
-    } else {
-      handleSendCommand(preset);
-    }
+    handleSendCommand(preset.cmd);
   };
 
   return (
@@ -84,9 +77,9 @@ export function ConsoleView() {
         title="Server console"
         detail="Command dispatch and connection output via AcidoHost Pterodactyl."
         actions={
-          <Badge tone="success">
-            <StatusDot tone="success" />
-            <span>BDS connected</span>
+          <Badge tone={serverMetrics?.online ? "success" : "neutral"}>
+            <StatusDot tone={serverMetrics?.online ? "success" : "neutral"} />
+            <span>{serverMetrics?.online ? "BDS connected" : "BDS disconnected"}</span>
           </Badge>
         }
       />
@@ -95,13 +88,14 @@ export function ConsoleView() {
       <div className="mb-4 flex flex-wrap gap-2">
         {presets.map((preset) => (
           <Button
-            key={preset}
+            key={preset.label}
             variant="outline"
             size="sm"
             className="font-mono h-8 text-[10px]"
             onClick={() => handlePreset(preset)}
+            disabled={sending}
           >
-            {preset}
+            {preset.label}
           </Button>
         ))}
       </div>
@@ -132,7 +126,7 @@ export function ConsoleView() {
           className="min-h-[340px] max-h-[500px] overflow-y-auto space-y-2 bg-foreground p-4 font-mono text-[11px] leading-relaxed text-background sm:p-6"
         >
           {consoleLogs.map((line, idx) => {
-            const isSuccess = line.includes('successfully') || line.includes('established') || line.includes('initialized');
+            const isSuccess = line.includes('successfully') || line.includes('established') || line.includes('ready');
             const isCommand = line.includes('> ');
             const isError = line.includes('Error');
 
@@ -162,7 +156,7 @@ export function ConsoleView() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendCommand()}
-              placeholder="Enter a command… (e.g. tp IronBot 40 108 -13 or list)"
+              placeholder={bots.length > 0 ? `Enter command... (e.g. tp ${bots[0].name} 0 64 0 or list)` : "Enter command... (e.g. list, time set day)"}
               className="min-w-0 flex-1 bg-transparent text-background outline-none placeholder:text-background/40 font-mono text-[11px]"
             />
             <Button
@@ -184,7 +178,7 @@ export function ConsoleView() {
             <StatusDot tone="success" />
             <span>Session open</span>
           </span>
-          <span className="font-mono">Target: ayx.acido.dev:19132</span>
+          <span className="font-mono">Target: {targetAddress}</span>
         </div>
       </section>
     </div>

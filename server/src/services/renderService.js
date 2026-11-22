@@ -34,11 +34,16 @@ export const renderService = {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 6000);
 
+        const host = state.settings?.bedrock?.host || 'ayx.acido.dev';
+        const port = state.settings?.bedrock?.port || 19132;
+
         const res = await fetch(`${config.serviceUrl}/api/bots/sync`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             bots: enabledBots,
+            host,
+            port,
             targetFarms: botsList.map(b => ({
               name: b.name,
               x: b.targetCoordinates?.x,

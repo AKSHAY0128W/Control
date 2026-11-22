@@ -259,7 +259,7 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
                       z={currentCoords.z}
                     />
                     <p className="mt-2 font-mono text-[10px] text-muted-foreground">
-                      NetherNet <span className="mx-1">·</span> BDS
+                      <span className="capitalize">{settings?.bedrock?.transport || 'NetherNet'}</span> <span className="mx-1">·</span> BDS
                     </p>
                   </div>
                 </div>

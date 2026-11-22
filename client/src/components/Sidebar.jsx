@@ -56,7 +56,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed }) {
         } sticky top-0 h-screen shrink-0 flex-col border-r border-border bg-card transition-[width] duration-200 select-none`}
       >
         {/* Brand / Logo Header */}
-        <div className={`flex h-[76px] items-center gap-3 border-b border-border px-4 ${isCollapsed ? 'justify-center px-2' : ''}`}>
+        <div className={`flex h-16 items-center gap-3 border-b border-border px-4 ${isCollapsed ? 'justify-center px-2' : ''}`}>
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <Server className="size-5" />
           </div>

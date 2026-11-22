@@ -57,6 +57,7 @@ export const api = {
   // Settings & Console
   getSettings: () => request('/settings'),
   updateSettings: (data) => request('/settings', { method: 'POST', body: JSON.stringify(data) }),
+  testBedrock: (host, port) => request('/settings/test-bedrock', { method: 'POST', body: JSON.stringify({ host, port }) }),
   testPterodactyl: () => request('/settings/test-pterodactyl', { method: 'POST' }),
   testRender: () => request('/settings/test-render', { method: 'POST' }),
   sendConsoleCommand: (command) => request('/settings/command', { method: 'POST', body: JSON.stringify({ command }) }),

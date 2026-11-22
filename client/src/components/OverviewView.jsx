@@ -35,7 +35,7 @@ export function OverviewView() {
     farms, 
     activityLogs, 
     setActiveTab, 
-    teleportBotToFarm,
+    teleportBot,
     wsConnected,
     settings,
     setLastNotification
@@ -43,16 +43,20 @@ export function OverviewView() {
 
   const [copied, setCopied] = useState(false);
 
+  const targetAddress = serverMetrics?.serverAddress || `${settings?.bedrock?.host || 'ayx.acido.dev'}:${settings?.bedrock?.port || 19132}`;
+  const worldName = serverMetrics?.worldName || settings?.bedrock?.worldName || 'CherryVale SMP';
+  const transportName = settings?.bedrock?.transport || 'NetherNet';
+
   const copyAddress = () => {
-    navigator.clipboard?.writeText('ayx.acido.dev:19132');
+    navigator.clipboard?.writeText(targetAddress);
     setCopied(true);
     if (setLastNotification) {
-      setLastNotification({ type: 'success', text: 'Server address copied to clipboard.' });
+      setLastNotification({ type: 'success', text: `Target address (${targetAddress}) copied to clipboard.` });
     }
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const activeBotsCount = bots.filter(b => b.active).length;
+  const activeBotsCount = bots.filter(b => b.enabled !== false && (b.status === 'online' || b.status === 'connecting')).length;
   const totalChunksEstimate = farms.length * 4;
 
   return (
@@ -61,7 +65,7 @@ export function OverviewView() {
       <PageHeader
         eyebrow="Operations / Overview"
         title="Server overview"
-        detail="Live telemetry and chunk loader health for CherryVale SMP."
+        detail={`Live telemetry and chunk loader health for ${worldName}.`}
         actions={
           <Badge tone={settings?.autoTeleport?.enabled !== false ? "success" : "neutral"}>
             <ShieldCheck className="size-3.5" />
@@ -70,24 +74,24 @@ export function OverviewView() {
         }
       />
 
-      {/* Hero Section: CherryVale SMP BDS Status */}
+      {/* Hero Section: BDS Status */}
       <section className="mb-6 rounded-lg border border-border bg-card shadow-sm">
         {/* Top Header Strip */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-success/10 text-success">
+            <div className={`flex size-10 items-center justify-center rounded-lg ${serverMetrics?.online ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
               <Server className="size-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-semibold text-foreground">CherryVale SMP</h2>
+                <h2 className="font-semibold text-foreground">{worldName}</h2>
                 <Badge tone={serverMetrics?.online ? "success" : "danger"}>
                   <StatusDot tone={serverMetrics?.online ? "success" : "danger"} />
                   <span>{serverMetrics?.online ? "Online" : "Offline"}</span>
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                NetherNet transport <span className="mx-1">·</span> Bedrock Dedicated Server <span className="mx-1">·</span> v{serverMetrics?.version || '1.26.61'}
+                <span className="capitalize">{transportName}</span> transport <span className="mx-1">·</span> Bedrock Dedicated Server <span className="mx-1">·</span> v{serverMetrics?.version || '1.26.61'}
               </p>
             </div>
           </div>
@@ -97,7 +101,7 @@ export function OverviewView() {
               <Radio className="size-3" />
               <span>Target</span>
             </Badge>
-            <span className="font-mono text-xs text-foreground">ayx.acido.dev:19132</span>
+            <span className="font-mono text-xs text-foreground">{targetAddress}</span>
             <Button
               variant="ghost"
               size="icon"
@@ -115,29 +119,29 @@ export function OverviewView() {
         <div className="grid grid-cols-2 divide-y divide-border px-4 sm:grid-cols-3 sm:divide-y-0 lg:grid-cols-5">
           <MetricCard
             label="Server address"
-            value="ayx.acido.dev:19132"
+            value={targetAddress}
             meta="Bedrock · UDP"
             icon={Radio}
           />
           <MetricCard
             label="World & version"
-            value={serverMetrics?.worldName || 'CherryVale SMP'}
+            value={worldName}
             meta={`Bedrock ${serverMetrics?.version || '1.26.61'}`}
             icon={Gamepad2}
           />
           <MetricCard
             label="Online players"
             value={`${serverMetrics?.playerCount || 0} / ${serverMetrics?.maxPlayers || 10}`}
-            meta={`${bots.length} AFK bots`}
+            meta={`${activeBotsCount} AFK bots`}
             icon={Users}
             accent={true}
           />
           <MetricCard
             label="Ping / latency"
-            value={serverMetrics?.online ? `${serverMetrics?.latencyMs || 88} ms` : '---'}
-            meta="Telemetry stable"
+            value={serverMetrics?.online ? `${serverMetrics?.latencyMs || 0} ms` : '---'}
+            meta={serverMetrics?.online ? "Telemetry stable" : "Server offline"}
             icon={Activity}
-            trend="stable"
+            trend={serverMetrics?.online ? "stable" : undefined}
           />
           <MetricCard
             label="Restarts tracked"
@@ -152,10 +156,10 @@ export function OverviewView() {
       <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SecondaryCard
           label="BDS uptime"
-          value="14d 06h 28m"
-          hint="Since last restart"
+          value={serverMetrics?.online ? (serverMetrics?.uptime || 'Online') : 'Offline'}
+          hint={serverMetrics?.online ? "Since last restart" : "Awaiting server start"}
           icon={Clock3}
-          tone="success"
+          tone={serverMetrics?.online ? "success" : "neutral"}
         />
         <SecondaryCard
           label="Bot workers"
@@ -209,12 +213,20 @@ export function OverviewView() {
               </div>
             ) : (
               bots.slice(0, 3).map((bot) => {
-                const farm = farms.find(f => f.id === bot.farmId || f.name === bot.targetFarm);
-                const distance = farm && bot.x != null && farm.x != null
-                  ? Math.round(Math.hypot(bot.x - farm.x, bot.y - farm.y, bot.z - farm.z))
+                const farm = farms.find(f => f.id === bot.farmId || f.name === bot.assignedFarm);
+                const botX = bot.currentCoordinates?.x ?? bot.targetCoordinates?.x ?? 0;
+                const botY = bot.currentCoordinates?.y ?? bot.targetCoordinates?.y ?? 64;
+                const botZ = bot.currentCoordinates?.z ?? bot.targetCoordinates?.z ?? 0;
+                const farmX = farm?.coordinates?.x ?? farm?.x;
+                const farmY = farm?.coordinates?.y ?? farm?.y ?? 64;
+                const farmZ = farm?.coordinates?.z ?? farm?.z;
+
+                const distance = farm && farmX != null && farmZ != null
+                  ? Math.round(Math.hypot(botX - farmX, botY - farmY, botZ - farmZ))
                   : 0;
                 const isOptimal = distance <= 10;
-                const badgeTone = bot.active ? (isOptimal ? 'success' : 'warning') : 'neutral';
+                const isOnline = bot.enabled !== false && (bot.status === 'online' || bot.status === 'connecting');
+                const badgeTone = isOnline ? (isOptimal ? 'success' : 'warning') : 'neutral';
 
                 return (
                   <div
@@ -229,19 +241,19 @@ export function OverviewView() {
                       <div className="flex items-center gap-2">
                         <p className="text-xs font-semibold text-foreground">{bot.name}</p>
                         <Badge tone={badgeTone}>
-                          {bot.active ? (isOptimal ? 'At farm' : 'Misplaced') : 'Paused'}
+                          {isOnline ? (isOptimal ? 'At farm' : 'Misplaced') : 'Paused'}
                         </Badge>
                       </div>
                       <p className="mt-1 truncate text-[10px] text-muted-foreground">
-                        {farm?.name || bot.targetFarm || 'No farm assigned'}{' '}
+                        {farm?.name || bot.assignedFarm || 'No farm assigned'}{' '}
                         <span className="mx-1">·</span> Current{' '}
                         <span className="font-mono text-foreground">
-                          {bot.x ?? 0}, {bot.y ?? 64}, {bot.z ?? 0}
+                          {botX}, {botY}, {botZ}
                         </span>
                       </p>
                     </div>
 
-                    {bot.active && !isOptimal && (
+                    {isOnline && !isOptimal && (
                       <span className="text-[10px] font-medium text-warning">
                         {distance} blocks away
                       </span>
@@ -251,7 +263,7 @@ export function OverviewView() {
                       variant="outline"
                       size="sm"
                       className="h-8 text-[11px]"
-                      onClick={() => teleportBotToFarm(bot.id)}
+                      onClick={() => teleportBot(bot.id)}
                     >
                       <Zap className="size-3.5" />
                       <span>Teleport</span>
@@ -289,22 +301,28 @@ export function OverviewView() {
                 No farm loaders configured yet.
               </div>
             ) : (
-              farms.slice(0, 3).map((farm) => (
-                <div key={farm.id} className="flex items-center justify-between gap-3 p-3.5">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-success/10 text-success">
-                      <Layers className="size-4" />
+              farms.slice(0, 3).map((farm) => {
+                const fx = farm.coordinates?.x ?? farm.x ?? 0;
+                const fy = farm.coordinates?.y ?? farm.y ?? 64;
+                const fz = farm.coordinates?.z ?? farm.z ?? 0;
+
+                return (
+                  <div key={farm.id} className="flex items-center justify-between gap-3 p-3.5">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-success/10 text-success">
+                        <Layers className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-foreground">{farm.name}</p>
+                        <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                          {fx}, {fy}, {fz}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-foreground">{farm.name}</p>
-                      <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
-                        {farm.x}, {farm.y}, {farm.z}
-                      </p>
-                    </div>
+                    <Badge tone="neutral">{farm.type || 'Custom Farm'}</Badge>
                   </div>
-                  <Badge tone="neutral">{farm.type || 'Iron Farm'}</Badge>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>
@@ -386,12 +404,12 @@ export function OverviewView() {
 
       {/* Footer */}
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-border py-4 text-[10px] text-muted-foreground">
-        <span>OUR SMP Control Center <span className="mx-1">·</span> BDS 1.26.61</span>
+        <span>OUR SMP Control Center <span className="mx-1">·</span> BDS v{serverMetrics?.version || '1.26.61'}</span>
         <span className="flex items-center gap-1.5">
-          <StatusDot tone="success" />
-          <span>Production environment</span>
+          <StatusDot tone={serverMetrics?.online ? "success" : "neutral"} />
+          <span>{serverMetrics?.online ? "Production BDS Online" : "Production BDS Offline"}</span>
           <span className="mx-1">·</span>
-          <span>Last sync just now</span>
+          <span>{targetAddress}</span>
         </span>
       </footer>
     </div>
