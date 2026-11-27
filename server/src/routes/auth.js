@@ -1,11 +1,64 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { state, logActivity } from '../models/db.js';
+import { state, logActivity, saveStateToFile } from '../models/db.js';
 import { config } from '../config/config.js';
 import { authenticate } from '../middleware/auth.js';
 
 export const authRouter = express.Router();
+
+// POST /api/v1/auth/register
+authRouter.post('/register', async (req, res) => {
+  const { username, password, name } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ success: false, error: 'Username and password are required' });
+  }
+
+  const cleanUsername = String(username).trim();
+  if (cleanUsername.length < 3) {
+    return res.status(400).json({ success: false, error: 'Username must be at least 3 characters long' });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
+  }
+
+  const existing = state.users.find(u => u.username.toLowerCase() === cleanUsername.toLowerCase());
+  if (existing) {
+    return res.status(409).json({ success: false, error: 'Username is already taken' });
+  }
+
+  const newUser = {
+    id: `user-${Date.now()}`,
+    username: cleanUsername,
+    passwordHash: await bcrypt.hash(password, 10),
+    role: 'admin',
+    name: (name && String(name).trim()) || cleanUsername,
+    createdAt: new Date().toISOString()
+  };
+
+  state.users.push(newUser);
+  saveStateToFile();
+
+  const token = jwt.sign(
+    { id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name },
+    config.jwtSecret,
+    { expiresIn: '7d' }
+  );
+
+  logActivity('USER_REGISTERED', `New user account created: ${newUser.username}`, 'info', 'Security');
+
+  res.status(201).json({
+    success: true,
+    token,
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      name: newUser.name,
+      role: newUser.role
+    }
+  });
+});
 
 // POST /api/v1/auth/login
 authRouter.post('/login', async (req, res) => {

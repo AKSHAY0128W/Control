@@ -15,7 +15,12 @@ import {
 } from 'lucide-react';
 
 export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed }) {
-  const { activeTab, setActiveTab, user, logout, bots } = useControlCenter();
+  const { activeTab, setActiveTab, user, logout, bots, settings, serverMetrics } = useControlCenter();
+
+  const panelName = settings?.bedrock?.worldName || serverMetrics?.worldName || 'Control Center';
+  const bdsVersion = serverMetrics?.version && serverMetrics.version !== 'Unknown'
+    ? `BDS ${serverMetrics.version}`
+    : 'Control Center';
 
   const activeBotsCount = Array.isArray(bots) ? bots.filter(b => b.enabled !== false && b.status === 'online').length : 0;
   const totalBotsCount = Array.isArray(bots) ? bots.length : 0;
@@ -56,15 +61,15 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed }) {
         } sticky top-0 h-screen shrink-0 flex-col border-r border-border bg-card transition-[width] duration-200 select-none`}
       >
         {/* Brand / Logo Header */}
-        <div className={`flex h-16 items-center gap-3 border-b border-border px-4 ${isCollapsed ? 'justify-center px-2' : ''}`}>
+        <div className={`flex min-h-[68px] items-center gap-3 border-b border-border px-4 py-3 ${isCollapsed ? 'justify-center px-2' : ''}`}>
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <Server className="size-5" />
           </div>
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold tracking-wide text-foreground">OUR SMP</p>
+              <p className="truncate text-sm font-bold tracking-wide text-foreground">{panelName}</p>
               <p className="truncate text-[11px] text-muted-foreground">
-                Control Center <span className="font-mono">· BDS 1.26.61</span>
+                Control Center <span className="font-mono">· {bdsVersion}</span>
               </p>
             </div>
           )}

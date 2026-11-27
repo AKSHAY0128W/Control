@@ -1,29 +1,35 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
 import { Button } from './ui/Shared';
-import { Server, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Server, Eye, EyeOff, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 
 export function LoginView() {
-  const { login, serverMetrics, settings } = useControlCenter();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('smpadmin2026');
+  const { login, register, serverMetrics, settings } = useControlCenter();
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const targetAddress = serverMetrics?.serverAddress || (settings?.bedrock?.host ? `${settings.bedrock.host}:${settings.bedrock.port || 19132}` : 'BDS 1.26.61');
+  const panelName = settings?.bedrock?.worldName || serverMetrics?.worldName || 'Bedrock Control Center';
+  const targetAddress = serverMetrics?.serverAddress || (settings?.bedrock?.host ? `${settings.bedrock.host}:${settings.bedrock.port || 19132}` : 'Multi-Server Panel');
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!username || !password) {
-      setError('Complete all credentials fields.');
+    if (!username.trim() || !password) {
+      setError('Complete all required fields.');
       return;
     }
     setError('');
     setLoading(true);
 
     try {
-      const res = await login(username, password);
+      const res = mode === 'login'
+        ? await login(username.trim(), password)
+        : await register(username.trim(), password, name.trim());
+
       if (!res?.success) {
         setError(res?.error || 'Authentication failed. Please verify credentials.');
       }
@@ -35,6 +41,7 @@ export function LoginView() {
   };
 
   const handleFillDefaults = () => {
+    setMode('login');
     setUsername('admin');
     setPassword('smpadmin2026');
     setError('');
@@ -49,38 +56,84 @@ export function LoginView() {
             <Server className="size-5" />
           </span>
           <div>
-            <p className="text-lg font-bold text-foreground">OUR SMP</p>
-            <p className="text-xs text-muted-foreground">Control Center · BDS 1.26.61</p>
+            <p className="text-lg font-bold text-foreground">{panelName}</p>
+            <p className="text-xs text-muted-foreground">Bedrock Server &amp; AFK Bot Control</p>
           </div>
         </div>
 
-        {/* Login Card */}
+        {/* Auth Card */}
         <section className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
-          <div className="mb-6">
-            <h1 className="text-xl font-semibold text-foreground">Welcome back</h1>
+          {/* Mode Switcher */}
+          <div className="mb-6 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/50 p-1">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(''); }}
+              className={`flex items-center justify-center gap-1.5 rounded py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                mode === 'login'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <LogIn className="size-3.5" />
+              <span>Sign in</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('register'); setError(''); }}
+              className={`flex items-center justify-center gap-1.5 rounded py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                mode === 'register'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <UserPlus className="size-3.5" />
+              <span>Create account</span>
+            </button>
+          </div>
+
+          <div className="mb-5">
+            <h1 className="text-xl font-semibold text-foreground">
+              {mode === 'login' ? 'Welcome back' : 'Create your panel account'}
+            </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Sign in to your server control center.
+              {mode === 'login'
+                ? 'Sign in to manage your Bedrock server and bots.'
+                : 'Register to connect your own Bedrock server IP, port & world.'}
             </p>
           </div>
 
           {/* Server Target Pill */}
-          <div className="mb-5 flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2.5">
+          <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2.5">
             <span className="text-[11px] text-muted-foreground">Server target</span>
             <span className="font-mono text-xs text-foreground">{targetAddress}</span>
           </div>
 
-          {/* 1-Click Default Demo Credentials */}
-          <button
-            type="button"
-            onClick={handleFillDefaults}
-            className="mb-4 flex w-full items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10 cursor-pointer"
-          >
-            <span className="text-[11px] font-medium text-primary">Default credentials</span>
-            <span className="font-mono text-[10px] text-muted-foreground">admin / smp•••••••••••</span>
-          </button>
+          {/* 1-Click Default Demo Credentials (Sign In mode only) */}
+          {mode === 'login' && (
+            <button
+              type="button"
+              onClick={handleFillDefaults}
+              className="mb-4 flex w-full items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10 cursor-pointer"
+            >
+              <span className="text-[11px] font-medium text-primary">Use default admin</span>
+              <span className="font-mono text-[10px] text-muted-foreground">admin / •••••••••••</span>
+            </button>
+          )}
 
-          {/* Login Form */}
+          {/* Auth Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === 'register' && (
+              <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
+                <span>Display name (optional)</span>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Alex"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </label>
+            )}
+
             <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
               <span>Username</span>
               <input
@@ -97,10 +150,10 @@ export function LoginView() {
               <span className="relative block">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
+                  placeholder={mode === 'register' ? 'Minimum 6 characters' : 'Password'}
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 pr-10 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
                 <button
@@ -125,13 +178,17 @@ export function LoginView() {
               disabled={loading}
               className="w-full gap-2 mt-2"
             >
-              <span>{loading ? 'Signing in...' : 'Sign in'}</span>
+              <span>
+                {loading
+                  ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
+                  : (mode === 'login' ? 'Sign in' : 'Create account & continue')}
+              </span>
               <ArrowRight className="size-4" />
             </Button>
           </form>
 
           <p className="mt-5 border-t border-border pt-4 text-center text-[10px] leading-relaxed text-muted-foreground">
-            Production session with HMAC SHA-256 JWT authorization.
+            Session protected with HMAC SHA-256 JWT authorization.
           </p>
         </section>
       </div>

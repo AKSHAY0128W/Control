@@ -15,11 +15,14 @@ settingsRouter.get('/', (req, res) => {
   // Ensure Bedrock target settings exist
   if (!settingsCopy.bedrock) {
     settingsCopy.bedrock = {
-      host: 'ayx.acido.dev',
+      isConfigured: false,
+      host: '',
       port: 19132,
-      worldName: 'CherryVale SMP',
+      worldName: '',
       transport: 'nethernet'
     };
+  } else {
+    settingsCopy.bedrock.isConfigured = Boolean(settingsCopy.bedrock.host);
   }
 
   // Mask Pterodactyl key
@@ -77,6 +80,9 @@ settingsRouter.post('/', (req, res) => {
         state.settings.bedrock.host = cleanHost;
         bedrockChanged = true;
       }
+      if (cleanHost) {
+        state.settings.bedrock.isConfigured = true;
+      }
     }
     if (bedrock.port !== undefined) {
       const cleanPort = parseInt(bedrock.port, 10) || 19132;
@@ -86,7 +92,7 @@ settingsRouter.post('/', (req, res) => {
       }
     }
     if (bedrock.worldName !== undefined) {
-      state.settings.bedrock.worldName = String(bedrock.worldName).trim() || 'CherryVale SMP';
+      state.settings.bedrock.worldName = String(bedrock.worldName).trim() || 'Bedrock Server';
     }
     if (bedrock.transport !== undefined) {
       state.settings.bedrock.transport = String(bedrock.transport).trim() || 'nethernet';

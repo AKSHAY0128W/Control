@@ -10,7 +10,7 @@ export function ConsoleView() {
   const scrollRef = useRef(null);
   const [initDone, setInitDone] = useState(false);
 
-  const targetAddress = serverMetrics?.serverAddress || `${settings?.bedrock?.host || ''}:${settings?.bedrock?.port || 19132}`;
+  const targetAddress = serverMetrics?.serverAddress || (settings?.bedrock?.host ? `${settings.bedrock.host}:${settings.bedrock.port || 19132}` : 'Not configured');
 
   const [consoleLogs, setConsoleLogs] = useState([
     `[${new Date().toLocaleTimeString('en-US')}] BDS connection established · NetherNet transport`,

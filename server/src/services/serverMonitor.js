@@ -20,6 +20,9 @@ function formatUptime(seconds) {
 export async function pollBedrockServer() {
   const host = state.settings?.bedrock?.host || config.bedrock.host;
   const port = state.settings?.bedrock?.port || config.bedrock.port;
+  if (!host) {
+    return;
+  }
   const url = `http://${host}:${port}/v1/join`;
   const startTime = Date.now();
 
@@ -55,10 +58,10 @@ export async function pollBedrockServer() {
         serverAddress: `${host}:${port}`,
         uptimeSeconds,
         uptime: formatUptime(uptimeSeconds),
-        motd: data.name || 'OUR SMP',
-        version: data.version || '1.26.61',
+        motd: data.name || state.settings?.bedrock?.worldName || 'Bedrock Server',
+        version: data.version || 'Unknown',
         protocol: data.protocol || 2225,
-        worldName: data.level || state.settings?.bedrock?.worldName || 'CherryVale SMP',
+        worldName: state.settings?.bedrock?.worldName || data.level || 'Bedrock Server',
         playerCount: data.players ?? 0,
         maxPlayers: data.maxPlayers ?? 10,
         gameType: data.gameType ?? 0,

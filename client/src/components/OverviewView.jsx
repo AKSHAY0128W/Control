@@ -43,9 +43,10 @@ export function OverviewView() {
 
   const [copied, setCopied] = useState(false);
 
-  const targetAddress = serverMetrics?.serverAddress || `${settings?.bedrock?.host || 'ayx.acido.dev'}:${settings?.bedrock?.port || 19132}`;
-  const worldName = serverMetrics?.worldName || settings?.bedrock?.worldName || 'CherryVale SMP';
+  const targetAddress = serverMetrics?.serverAddress || (settings?.bedrock?.host ? `${settings.bedrock.host}:${settings.bedrock.port || 19132}` : 'Not configured');
+  const worldName = settings?.bedrock?.worldName || serverMetrics?.worldName || 'Bedrock Server';
   const transportName = settings?.bedrock?.transport || 'NetherNet';
+  const bdsVersion = serverMetrics?.version && serverMetrics.version !== 'Unknown' ? serverMetrics.version : '---';
 
   const copyAddress = () => {
     navigator.clipboard?.writeText(targetAddress);
@@ -91,7 +92,7 @@ export function OverviewView() {
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                <span className="capitalize">{transportName}</span> transport <span className="mx-1">·</span> Bedrock Dedicated Server <span className="mx-1">·</span> v{serverMetrics?.version || '1.26.61'}
+                <span className="capitalize">{transportName}</span> transport <span className="mx-1">·</span> Bedrock Dedicated Server <span className="mx-1">·</span> v{bdsVersion}
               </p>
             </div>
           </div>
@@ -126,7 +127,7 @@ export function OverviewView() {
           <MetricCard
             label="World & version"
             value={worldName}
-            meta={`Bedrock ${serverMetrics?.version || '1.26.61'}`}
+            meta={`Bedrock ${bdsVersion}`}
             icon={Gamepad2}
           />
           <MetricCard
@@ -404,7 +405,7 @@ export function OverviewView() {
 
       {/* Footer */}
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-border py-4 text-[10px] text-muted-foreground">
-        <span>OUR SMP Control Center <span className="mx-1">·</span> BDS v{serverMetrics?.version || '1.26.61'}</span>
+        <span>{worldName} Control Center <span className="mx-1">·</span> BDS v{bdsVersion}</span>
         <span className="flex items-center gap-1.5">
           <StatusDot tone={serverMetrics?.online ? "success" : "neutral"} />
           <span>{serverMetrics?.online ? "Production BDS Online" : "Production BDS Offline"}</span>

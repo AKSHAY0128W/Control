@@ -21,14 +21,14 @@ export function ControlCenterProvider({ children }) {
 
   // Metrics & Data State
   const [serverMetrics, setServerMetrics] = useState({
-    online: true,
-    motd: 'OUR SMP',
-    version: '1.26.61',
-    worldName: 'CherryVale SMP',
+    online: false,
+    motd: 'Bedrock Server',
+    version: 'Unknown',
+    worldName: '',
     playerCount: 0,
     maxPlayers: 10,
     players: [],
-    latencyMs: 88,
+    latencyMs: 0,
     restartCount: 0,
     lastCheck: null
   });
@@ -37,9 +37,11 @@ export function ControlCenterProvider({ children }) {
   const [farms, setFarms] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [settings, setSettings] = useState({
+    bedrock: { isConfigured: true, host: '', port: 19132, worldName: '', transport: 'nethernet' },
     pterodactyl: { isConfigured: false, panelUrl: '', serverId: '' },
     autoTeleport: { enabled: true, delaySeconds: 8, distanceThreshold: 10 }
   });
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [lastNotification, setLastNotification] = useState(null);
 
@@ -98,6 +100,8 @@ export function ControlCenterProvider({ children }) {
       if (activityRes?.success) setActivityLogs(activityRes.data);
     } catch (err) {
       console.error('Failed to load initial data:', err);
+    } finally {
+      setSettingsLoaded(true);
     }
   }, []);
 
@@ -180,6 +184,19 @@ export function ControlCenterProvider({ children }) {
       setToken(res.token);
       setUser(res.user);
       setLastNotification({ type: 'success', text: `Welcome back, ${res.user.name || res.user.username}!` });
+      loadInitialData();
+    }
+    return res;
+  };
+
+  const register = async (username, password, name) => {
+    const res = await api.register(username, password, name);
+    if (res?.success) {
+      localStorage.setItem('smp_auth_token', res.token);
+      localStorage.setItem('smp_user', JSON.stringify(res.user));
+      setToken(res.token);
+      setUser(res.user);
+      setLastNotification({ type: 'success', text: `Account created! Configure your Bedrock server to begin.` });
       loadInitialData();
     }
     return res;
@@ -358,9 +375,11 @@ export function ControlCenterProvider({ children }) {
         farms,
         activityLogs,
         settings,
+        settingsLoaded,
         wsConnected,
         lastNotification,
         setLastNotification,
+        register,
         teleportBot,
         teleportAllBotsToFarms,
         updateBot,

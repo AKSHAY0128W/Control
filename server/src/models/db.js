@@ -36,10 +36,10 @@ export const state = {
   ],
   serverMetrics: {
     online: false,
-    motd: 'Unknown',
+    motd: 'Bedrock Server',
     version: 'Unknown',
     protocol: 0,
-    worldName: 'CherryVale SMP',
+    worldName: '',
     playerCount: 0,
     maxPlayers: 10,
     latencyMs: 0,
@@ -52,9 +52,10 @@ export const state = {
   },
   settings: {
     bedrock: {
-      host: config.bedrock.host,
+      isConfigured: Boolean(process.env.BEDROCK_SERVER_HOST),
+      host: process.env.BEDROCK_SERVER_HOST || '',
       port: config.bedrock.port,
-      worldName: 'CherryVale SMP',
+      worldName: process.env.BEDROCK_WORLD_NAME || '',
       transport: config.bedrock.transport || 'nethernet',
     },
     pterodactyl: {

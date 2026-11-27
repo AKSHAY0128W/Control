@@ -3,6 +3,7 @@ import { ControlCenterProvider, useControlCenter } from './context/ControlCenter
 import { Sidebar } from './components/Sidebar';
 import { TopHeader } from './components/TopHeader';
 import { LoginView } from './components/LoginView';
+import { ServerSetupView } from './components/ServerSetupView';
 import { OverviewView } from './components/OverviewView';
 import { BotManager } from './components/BotManager';
 import { FarmManager } from './components/FarmManager';
@@ -25,7 +26,9 @@ function DashboardLayout() {
     activeTab, 
     theme, 
     lastNotification, 
-    setLastNotification 
+    setLastNotification,
+    settings,
+    settingsLoaded
   } = useControlCenter();
 
   // Responsive sidebar states
@@ -37,11 +40,20 @@ function DashboardLayout() {
   const [selectedBot, setSelectedBot] = useState(null);
   const [selectedFarm, setSelectedFarm] = useState(null);
 
-  // If not authenticated, render Lovable styled login portal
+  // If not authenticated, render login / register portal
   if (!isAuthenticated) {
     return (
       <div className={theme === 'dark' ? 'dark' : ''}>
         <LoginView />
+      </div>
+    );
+  }
+
+  // If authenticated but no server IP/world configured yet, show onboarding setup
+  if (settingsLoaded && !settings?.bedrock?.host) {
+    return (
+      <div className={theme === 'dark' ? 'dark' : ''}>
+        <ServerSetupView />
       </div>
     );
   }
@@ -67,11 +79,11 @@ function DashboardLayout() {
 
           {/* Page Body Container */}
           <main className="flex-1">
-            <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-12 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-[1400px] px-4 pt-7 pb-12 sm:px-6 lg:px-8">
               {/* Notification Toast Alert */}
               {lastNotification && (
                 <div 
-                  className={`mb-5 flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-xs shadow-sm transition-all animate-in fade-in-0 ${
+                  className={`mb-6 flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-xs shadow-sm transition-all animate-in fade-in-0 ${
                     lastNotification.type === 'success' || lastNotification.type === 'info'
                       ? 'border-success/20 bg-success/10 text-success'
                       : 'border-warning/25 bg-warning/10 text-warning'

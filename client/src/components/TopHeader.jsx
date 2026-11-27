@@ -35,7 +35,7 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
     security: 'Security & Auth',
   };
 
-  const worldName = serverMetrics?.worldName || settings?.bedrock?.worldName || 'CherryVale SMP';
+  const worldName = settings?.bedrock?.worldName || serverMetrics?.worldName || 'Bedrock Server';
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -48,7 +48,7 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card shadow-xs">
-      <div className="flex h-16 items-center justify-between gap-2 px-3 sm:px-6">
+      <div className="flex min-h-[68px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         {/* Left: Collapse / Mobile toggle & Titles */}
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           {/* Desktop Sidebar Toggle */}
@@ -124,11 +124,11 @@ export function TopHeader({ isCollapsed, setIsCollapsed, setIsMobileOpen }) {
           <Button
             onClick={teleportAllBotsToFarms}
             size="sm"
-            className="h-8 sm:h-9 gap-1.5 sm:gap-2 px-2.5 sm:px-3 text-xs shadow-xs"
+            className="h-9 gap-1.5 sm:gap-2 px-3 sm:px-3.5 text-xs shadow-xs shrink-0"
           >
-            <Zap className="size-3.5 fill-current" />
-            <span className="hidden md:inline">Teleport all bots</span>
-            <span className="md:hidden">Teleport all</span>
+            <Zap className="size-3.5 fill-current shrink-0" />
+            <span className="hidden lg:inline">Teleport all bots</span>
+            <span className="lg:hidden">Teleport</span>
           </Button>
         </div>
       </div>
