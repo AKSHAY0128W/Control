@@ -1,53 +1,44 @@
 import React from 'react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
-// Status ping dot with optional pulse animation
+// Status dot indicator
 export function StatusDot({ tone = 'success' }) {
-  const isPinging = tone === 'success';
-  const colorMap = {
-    success: 'bg-success',
-    warning: 'bg-warning',
-    danger: 'bg-danger',
-    muted: 'bg-muted-foreground'
-  };
+  const toneClass =
+    tone === 'success' ? 'is-success'
+      : tone === 'warning' ? 'is-warning'
+        : tone === 'danger' ? 'is-danger'
+          : 'is-muted';
 
-  return (
-    <span className={`relative flex size-2 shrink-0 ${isPinging ? 'after:absolute after:inset-0 after:animate-ping after:rounded-full after:bg-success/60' : ''}`}>
-      <span className={`relative size-2 rounded-full ${colorMap[tone] || 'bg-success'}`} />
-    </span>
-  );
+  return <span className={`cc-dot ${toneClass}`} aria-hidden="true" />;
 }
 
-// Crisp Pill Badge matching Lovable design system
-export function Badge({ children, tone = 'neutral', className = '' }) {
-  const tones = {
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-    danger: 'bg-danger/10 text-danger border-danger/20',
-    neutral: 'bg-muted text-muted-foreground border-border',
-    primary: 'bg-primary/10 text-primary border-primary/20'
-  };
+// Reusable StatusBadge (also exported as Badge for backward compatibility)
+export function StatusBadge({ children, tone = 'neutral', className = '' }) {
+  const toneClass =
+    tone === 'success' ? 'is-success'
+      : tone === 'warning' ? 'is-warning'
+        : tone === 'danger' ? 'is-danger'
+          : tone === 'primary' ? 'is-primary'
+            : 'is-neutral';
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold leading-none ${tones[tone] || tones.neutral} ${className}`}>
+    <span className={`cc-badge ${toneClass} ${className}`}>
       {children}
     </span>
   );
 }
+export const Badge = StatusBadge;
 
-// Page Header with eyebrow, H1, description and action buttons
+// Page Header with eyebrow, title, description and actions
 export function PageHeader({ eyebrow, title, detail, actions }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4 scroll-mt-20">
+    <div className="cc-page-header">
       <div>
-        {eyebrow && (
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {detail && <p className="mt-1.5 text-sm text-muted-foreground">{detail}</p>}
+        {eyebrow && <p className="cc-eyebrow">{eyebrow}</p>}
+        <h1 className="cc-page-title">{title}</h1>
+        {detail && <p className="cc-page-detail">{detail}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="cc-page-actions">{actions}</div>}
     </div>
   );
 }
@@ -55,161 +46,209 @@ export function PageHeader({ eyebrow, title, detail, actions }) {
 // Monospace Coordinate Badge
 export function CoordinateBadge({ x, y, z }) {
   return (
-    <div className="flex items-center gap-3 font-mono text-xs text-foreground">
-      <span><i className="mr-1 not-italic text-muted-foreground">X</i>{x}</span>
-      <span><i className="mr-1 not-italic text-muted-foreground">Y</i>{y}</span>
-      <span><i className="mr-1 not-italic text-muted-foreground">Z</i>{z}</span>
+    <div className="cc-coords">
+      <span><i>X</i>{x}</span>
+      <span><i>Y</i>{y}</span>
+      <span><i>Z</i>{z}</span>
     </div>
   );
 }
 
-// 5-Column Metric Card inside BDS Server Banner
+// Metric Cell inside BDS Server Banner
 export function MetricCard({ label, value, meta, icon: Icon, trend, accent = false }) {
   return (
-    <div className="min-w-0 border-b border-border px-4 py-4 first:pl-0 last:pr-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-      <div className="flex items-center justify-between gap-2 text-muted-foreground">
-        <span className="truncate text-xs font-medium">{label}</span>
-        {Icon && <Icon className="size-4 shrink-0" />}
+    <div className="cc-metric-cell">
+      <div className="cc-metric-top">
+        <span className="cc-truncate">{label}</span>
+        {Icon && <Icon size={15} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />}
       </div>
-      <div className={`mt-3 truncate text-lg font-semibold ${accent ? 'text-success' : 'text-foreground'}`}>
+      <div className={`cc-metric-val cc-truncate ${accent ? 'is-accent' : ''}`}>
         {value}
       </div>
-      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <span>{meta}</span>
-        {trend && (
-          <span className="inline-flex items-center text-success">
-            {trend}
-          </span>
-        )}
+      <div className="cc-metric-meta">
+        <span className="cc-truncate">{meta}</span>
+        {trend && <span style={{ color: 'var(--success)', fontWeight: 600 }}>{trend}</span>}
       </div>
     </div>
   );
 }
 
-// Secondary Stat Card (BDS uptime, Bot workers, Farm chunks, WebSocket)
-export function SecondaryCard({ label, value, hint, icon: Icon, tone = 'primary' }) {
-  const toneClasses = {
-    success: 'text-success bg-success/10',
-    warning: 'text-warning bg-warning/10',
-    danger: 'text-danger bg-danger/10',
-    primary: 'text-primary bg-primary/10'
-  };
+// Reusable StatCard (also exported as SecondaryCard for compatibility)
+export function StatCard({ label, value, hint, icon: Icon, tone = 'primary' }) {
+  const toneClass =
+    tone === 'success' ? 'is-success'
+      : tone === 'warning' ? 'is-warning'
+        : tone === 'danger' ? 'is-danger'
+          : '';
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        {Icon && (
-          <span className={`flex size-8 items-center justify-center rounded-md ${toneClasses[tone] || toneClasses.primary}`}>
-            <Icon className="size-4" />
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-xl font-semibold font-mono tracking-normal text-foreground">
-        {value}
-      </p>
-      <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}
-
-// Section Container Card (for Settings, Security, etc.)
-export function SectionCard({ icon: Icon, title, description, children, className = '' }) {
-  return (
-    <section className={`space-y-4 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5 ${className}`}>
-      <div className="flex items-start gap-3 border-b border-border pb-4">
-        {Icon && (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Icon className="size-4" />
-          </span>
-        )}
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-          {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+    <div className="cc-stat-card">
+      {Icon && (
+        <div className={`cc-icon-box ${toneClass}`}>
+          <Icon size={18} />
         </div>
+      )}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p className="cc-stat-label cc-truncate">{label}</p>
+        <p className="cc-stat-value cc-truncate">{value}</p>
+        {hint && <p className="cc-stat-hint cc-truncate">{hint}</p>}
       </div>
-      {children}
+    </div>
+  );
+}
+export const SecondaryCard = StatCard;
+
+// Section Card Container
+export function SectionCard({ icon: Icon, title, description, actions, children }) {
+  return (
+    <section className="cc-card">
+      <div className="cc-section-header">
+        <div className="cc-section-title-row">
+          {Icon && (
+            <div className="cc-icon-box">
+              <Icon size={17} />
+            </div>
+          )}
+          <div>
+            <h2 className="cc-section-title">{title}</h2>
+            {description && <p className="cc-section-desc">{description}</p>}
+          </div>
+        </div>
+        {actions}
+      </div>
+      <div className="cc-section-body">{children}</div>
     </section>
   );
 }
 
 // Form Input Field
-export function InputField({ label, value, onChange, type = 'text', mono = false, suffix, placeholder = '', readOnly = false, className = '' }) {
+export function InputField({ label, value, onChange, placeholder, type = 'text', suffix, mono = false, disabled = false }) {
   return (
-    <label className={`block space-y-1.5 ${className}`}>
-      {label && <span className="text-[11px] font-medium text-muted-foreground">{label}</span>}
-      <span className="flex items-center gap-2">
+    <label className="cc-field">
+      <span className="cc-field-label">{label}</span>
+      <div className="cc-input-wrap">
         <input
           type={type}
-          value={value ?? ''}
+          value={value}
           onChange={onChange}
           placeholder={placeholder}
-          readOnly={readOnly}
-          className={`flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${mono ? 'font-mono' : ''}`}
+          disabled={disabled}
+          className={`cc-input ${mono ? 'cc-mono' : ''}`}
+          style={suffix ? { paddingRight: '64px' } : undefined}
         />
-        {suffix && <span className="text-[10px] text-muted-foreground whitespace-nowrap">{suffix}</span>}
-      </span>
+        {suffix && <span className="cc-input-suffix">{suffix}</span>}
+      </div>
     </label>
   );
 }
 
-// Clean Accessible Switch Toggle
-export function Switch({ checked, onCheckedChange, disabled = false, 'aria-label': ariaLabel }) {
+// Accessible Switch Toggle
+export function Switch({ checked, onCheckedChange, 'aria-label': ariaLabel }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
-      disabled={disabled}
-      onClick={() => onCheckedChange && onCheckedChange(!checked)}
-      className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-primary' : 'bg-muted'}`}
+      onClick={() => onCheckedChange(!checked)}
+      className={`cc-switch ${checked ? 'is-checked' : ''}`}
     >
-      <span
-        className={`pointer-events-none block size-4 rounded-full bg-background shadow-lg ring-0 transition-transform ${checked ? 'translate-x-4' : 'translate-x-0'}`}
-      />
+      <span className="cc-switch-thumb" />
     </button>
   );
 }
 
-// Lovable Shadcn Button
-export function Button({
-  children,
-  variant = 'default', // 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive'
-  size = 'default',    // 'default' | 'sm' | 'icon'
-  className = '',
-  disabled = false,
-  type = 'button',
-  onClick,
-  title,
-  'aria-label': ariaLabel
-}) {
-  const base = "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0";
-  
-  const variants = {
-    default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-    destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-    outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-    secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-    ghost: "hover:bg-accent hover:text-accent-foreground text-foreground"
-  };
+// Reusable Button
+export function Button({ children, variant = 'default', size = 'default', className = '', onClick, type = 'button', disabled = false, title, 'aria-label': ariaLabel }) {
+  const variantClass =
+    variant === 'outline' ? 'cc-btn-outline'
+      : variant === 'ghost' ? 'cc-btn-ghost'
+        : variant === 'destructive' ? 'cc-btn-danger'
+          : 'cc-btn-primary';
 
-  const sizes = {
-    default: "h-9 px-4 py-2",
-    sm: "h-8 rounded-md px-3 text-xs",
-    icon: "size-9"
-  };
+  const sizeClass =
+    size === 'sm' ? 'cc-btn-sm'
+      : size === 'icon' ? 'cc-btn-icon'
+        : '';
 
   return (
     <button
       type={type}
-      disabled={disabled}
       onClick={onClick}
+      disabled={disabled}
       title={title}
       aria-label={ariaLabel}
-      className={`${base} ${variants[variant] || variants.default} ${sizes[size] || sizes.default} ${className}`}
+      className={`cc-btn ${variantClass} ${sizeClass} ${className}`}
     >
       {children}
     </button>
+  );
+}
+
+// Empty State Component
+export function EmptyState({ icon: Icon, title, description, action }) {
+  return (
+    <div className="cc-state-box">
+      {Icon && <Icon size={34} style={{ margin: '0 auto', color: 'var(--text-muted)', opacity: 0.65 }} />}
+      <h3 className="cc-state-title">{title}</h3>
+      {description && <p className="cc-state-desc">{description}</p>}
+      {action && <div style={{ marginTop: 16 }}>{action}</div>}
+    </div>
+  );
+}
+
+// Loading State Component
+export function LoadingState({ message = 'Loading data...' }) {
+  return (
+    <div className="cc-state-box">
+      <Loader2 size={28} style={{ margin: '0 auto', color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
+      <p className="cc-state-desc" style={{ marginTop: 10 }}>{message}</p>
+    </div>
+  );
+}
+
+// Responsive Table Container
+export function ResponsiveTable({ columns, children, footer }) {
+  return (
+    <div className="cc-table-wrap">
+      <table className="cc-table">
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th key={col}>{col}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+      {footer && (
+        <div style={{ borderTop: '1px solid var(--border-subtle)', padding: '10px 16px', fontSize: 11, color: 'var(--text-muted)' }}>
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Reusable Confirm Dialog
+export function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', tone = 'destructive', onConfirm, onCancel }) {
+  if (!open) return null;
+
+  return (
+    <div className="cc-modal-backdrop" onClick={onCancel} role="dialog" aria-modal="true">
+      <div className="cc-modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className={`cc-icon-box ${tone === 'destructive' ? 'is-danger' : 'is-warning'}`}>
+            <AlertTriangle size={18} />
+          </div>
+          <h2 style={{ fontSize: 16, fontWeight: 600 }}>{title}</h2>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55 }}>{message}</p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 6 }}>
+          <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
+          <Button variant={tone} size="sm" onClick={onConfirm}>{confirmLabel}</Button>
+        </div>
+      </div>
+    </div>
   );
 }

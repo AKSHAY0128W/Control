@@ -1,40 +1,41 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { 
-  PageHeader, 
-  Badge, 
-  StatusDot, 
-  MetricCard, 
-  SecondaryCard, 
-  Button 
+import {
+  PageHeader,
+  StatusBadge,
+  StatusDot,
+  MetricCard,
+  StatCard,
+  ResponsiveTable,
+  EmptyState,
+  Button
 } from './ui/Shared';
-import { 
-  Server, 
-  Radio, 
-  Copy, 
-  Check, 
-  Gamepad2, 
-  Users, 
-  Activity, 
-  RotateCcw, 
-  Clock3, 
-  Bot, 
-  Cpu, 
-  Wifi, 
-  Layers, 
-  Zap, 
-  ArrowRight, 
-  ShieldCheck,
-  AlertTriangle
+import {
+  Server,
+  Radio,
+  Copy,
+  Check,
+  Gamepad2,
+  Users,
+  Activity,
+  RotateCcw,
+  Clock3,
+  Bot,
+  Cpu,
+  Wifi,
+  Layers,
+  Zap,
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 
 export function OverviewView() {
-  const { 
-    serverMetrics, 
-    bots, 
-    farms, 
-    activityLogs, 
-    setActiveTab, 
+  const {
+    serverMetrics,
+    bots,
+    farms,
+    activityLogs,
+    setActiveTab,
     teleportBot,
     wsConnected,
     settings,
@@ -62,62 +63,69 @@ export function OverviewView() {
 
   return (
     <div>
-      {/* Top Page Header */}
       <PageHeader
         eyebrow="Operations / Overview"
         title="Server overview"
         detail={`Live telemetry and chunk loader health for ${worldName}.`}
         actions={
-          <Badge tone={settings?.autoTeleport?.enabled !== false ? "success" : "neutral"}>
-            <ShieldCheck className="size-3.5" />
-            <span>Auto-TP restart guard active</span>
-          </Badge>
+          <StatusBadge tone={settings?.autoTeleport?.enabled !== false ? 'success' : 'neutral'}>
+            <ShieldCheck size={14} />
+            <span>Auto-TP restart guard {settings?.autoTeleport?.enabled !== false ? 'active' : 'paused'}</span>
+          </StatusBadge>
         }
       />
 
-      {/* Hero Section: BDS Status */}
-      <section className="mb-6 rounded-lg border border-border bg-card shadow-sm">
-        {/* Top Header Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className={`flex size-10 items-center justify-center rounded-lg ${serverMetrics?.online ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-              <Server className="size-5" />
+      {/* Hero Section: BDS Status & Primary Metrics */}
+      <section className="cc-card" style={{ marginBottom: 24, overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            padding: '18px 20px',
+            borderBottom: '1px solid var(--border-subtle)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+            <div className={`cc-icon-box ${serverMetrics?.online ? 'is-success' : 'is-danger'}`} style={{ width: 42, height: 42 }}>
+              <Server size={20} />
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-semibold text-foreground">{worldName}</h2>
-                <Badge tone={serverMetrics?.online ? "success" : "danger"}>
-                  <StatusDot tone={serverMetrics?.online ? "success" : "danger"} />
-                  <span>{serverMetrics?.online ? "Online" : "Offline"}</span>
-                </Badge>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700 }}>{worldName}</h2>
+                <StatusBadge tone={serverMetrics?.online ? 'success' : 'danger'}>
+                  <StatusDot tone={serverMetrics?.online ? 'success' : 'danger'} />
+                  <span>{serverMetrics?.online ? 'Online' : 'Offline'}</span>
+                </StatusBadge>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                <span className="capitalize">{transportName}</span> transport <span className="mx-1">·</span> Bedrock Dedicated Server <span className="mx-1">·</span> v{bdsVersion}
+              <p style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted)' }}>
+                <span style={{ textTransform: 'capitalize' }}>{transportName}</span> transport · Bedrock Dedicated Server · v{bdsVersion}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge tone="neutral">
-              <Radio className="size-3" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <StatusBadge tone="neutral">
+              <Radio size={12} />
               <span>Target</span>
-            </Badge>
-            <span className="font-mono text-xs text-foreground">{targetAddress}</span>
+            </StatusBadge>
+            <span className="cc-mono" style={{ fontSize: 12 }}>{targetAddress}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="size-7"
               aria-label="Copy server address"
               title="Copy server address"
               onClick={copyAddress}
+              style={{ width: 30, height: 30 }}
             >
-              {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+              {copied ? <Check size={14} style={{ color: 'var(--success)' }} /> : <Copy size={14} />}
             </Button>
           </div>
         </div>
 
-        {/* 5-Column Metrics Strip */}
-        <div className="grid grid-cols-2 divide-y divide-border px-4 sm:grid-cols-3 sm:divide-y-0 lg:grid-cols-5">
+        <div className="cc-metrics-strip">
           <MetricCard
             label="Server address"
             value={targetAddress}
@@ -140,9 +148,9 @@ export function OverviewView() {
           <MetricCard
             label="Ping / latency"
             value={serverMetrics?.online ? `${serverMetrics?.latencyMs || 0} ms` : '---'}
-            meta={serverMetrics?.online ? "Telemetry stable" : "Server offline"}
+            meta={serverMetrics?.online ? 'Telemetry stable' : 'Server offline'}
             icon={Activity}
-            trend={serverMetrics?.online ? "stable" : undefined}
+            trend={serverMetrics?.online ? 'stable' : undefined}
           />
           <MetricCard
             label="Restarts tracked"
@@ -153,65 +161,67 @@ export function OverviewView() {
         </div>
       </section>
 
-      {/* 4-Metric Secondary Row */}
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SecondaryCard
+      {/* Secondary Stat Strip */}
+      <div className="cc-stat-grid" style={{ marginBottom: 28 }}>
+        <StatCard
           label="BDS uptime"
           value={serverMetrics?.online ? (serverMetrics?.uptime || 'Online') : 'Offline'}
-          hint={serverMetrics?.online ? "Since last restart" : "Awaiting server start"}
+          hint={serverMetrics?.online ? 'Since last restart' : 'Awaiting server start'}
           icon={Clock3}
-          tone={serverMetrics?.online ? "success" : "neutral"}
+          tone={serverMetrics?.online ? 'success' : 'neutral'}
         />
-        <SecondaryCard
+        <StatCard
           label="Bot workers"
           value={`${activeBotsCount} / ${bots.length}`}
           hint="Active in BDS"
           icon={Bot}
           tone="primary"
         />
-        <SecondaryCard
+        <StatCard
           label="Farm chunks"
           value={String(totalChunksEstimate)}
           hint="2 × 2 chunk radius · estimate"
           icon={Cpu}
           tone="warning"
         />
-        <SecondaryCard
+        <StatCard
           label="WebSocket"
-          value={wsConnected ? "Connected" : "Reconnecting"}
-          hint={wsConnected ? "Updates streaming · live" : "Connecting to /ws/live"}
+          value={wsConnected ? 'Connected' : 'Reconnecting'}
+          hint={wsConnected ? 'Updates streaming · live' : 'Connecting to /ws/live'}
           icon={Wifi}
-          tone={wsConnected ? "success" : "warning"}
+          tone={wsConnected ? 'success' : 'warning'}
         />
       </div>
 
       {/* 2-Column Split: Bot Position Manager & Farm Loaders */}
-      <div className="mb-8 grid grid-cols-1 gap-8 xl:grid-cols-[1.15fr_0.85fr]">
-        {/* Left: Bot Position Manager Summary */}
+      <div className="cc-overview-split" style={{ marginBottom: 28 }}>
+        {/* Bot Position Manager Summary */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Bot position manager</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <h2 style={{ fontSize: 15, fontWeight: 600 }}>Bot position manager</h2>
+              <p style={{ marginTop: 2, fontSize: 12, color: 'var(--text-muted)' }}>
                 Worker state and distance from assigned farm.
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs cursor-pointer"
-              onClick={() => setActiveTab('bots')}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setActiveTab('bots')}>
               <span>Manage bots</span>
-              <ArrowRight className="size-3.5" />
+              <ArrowRight size={14} />
             </Button>
           </div>
 
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {bots.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card p-4 text-center text-xs text-muted-foreground">
-                No bot workers registered yet.
-              </div>
+              <EmptyState
+                icon={Bot}
+                title="No bot workers registered"
+                description="Register an AFK bot in Bot Manager to keep farms loaded."
+                action={
+                  <Button size="sm" variant="outline" onClick={() => setActiveTab('bots')}>
+                    Open Bot Manager
+                  </Button>
+                }
+              />
             ) : (
               bots.slice(0, 3).map((bot) => {
                 const farm = farms.find(f => f.id === bot.farmId || f.name === bot.assignedFarm);
@@ -232,41 +242,36 @@ export function OverviewView() {
                 return (
                   <div
                     key={bot.id}
-                    className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm"
+                    className="cc-card"
+                    style={{ padding: 16, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}
                   >
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                      <Bot className="size-[18px]" />
+                    <div className="cc-icon-box">
+                      <Bot size={18} />
                     </div>
 
-                    <div className="min-w-[100px] flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-semibold text-foreground">{bot.name}</p>
-                        <Badge tone={badgeTone}>
+                    <div style={{ minWidth: 120, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <p style={{ fontSize: 13, fontWeight: 600 }}>{bot.name}</p>
+                        <StatusBadge tone={badgeTone}>
                           {isOnline ? (isOptimal ? 'At farm' : 'Misplaced') : 'Paused'}
-                        </Badge>
+                        </StatusBadge>
                       </div>
-                      <p className="mt-1 truncate text-[10px] text-muted-foreground">
-                        {farm?.name || bot.assignedFarm || 'No farm assigned'}{' '}
-                        <span className="mx-1">·</span> Current{' '}
-                        <span className="font-mono text-foreground">
+                      <p className="cc-truncate" style={{ marginTop: 4, fontSize: 11, color: 'var(--text-muted)' }}>
+                        {farm?.name || bot.assignedFarm || 'No farm assigned'} · Current{' '}
+                        <span className="cc-mono" style={{ color: 'var(--text-primary)' }}>
                           {botX}, {botY}, {botZ}
                         </span>
                       </p>
                     </div>
 
                     {isOnline && !isOptimal && (
-                      <span className="text-[10px] font-medium text-warning">
+                      <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--warning)' }}>
                         {distance} blocks away
                       </span>
                     )}
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-[11px]"
-                      onClick={() => teleportBot(bot.id)}
-                    >
-                      <Zap className="size-3.5" />
+                    <Button variant="outline" size="sm" onClick={() => teleportBot(bot.id)}>
+                      <Zap size={13} />
                       <span>Teleport</span>
                     </Button>
                   </div>
@@ -276,141 +281,145 @@ export function OverviewView() {
           </div>
         </section>
 
-        {/* Right: Farm Loaders Summary */}
+        {/* Farm Loaders Summary */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Farm loaders</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <h2 style={{ fontSize: 15, fontWeight: 600 }}>Farm loaders</h2>
+              <p style={{ marginTop: 2, fontSize: 12, color: 'var(--text-muted)' }}>
                 Configured chunk loading targets.
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs cursor-pointer"
-              onClick={() => setActiveTab('farms')}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setActiveTab('farms')}>
               <span>View farms</span>
-              <ArrowRight className="size-3.5" />
+              <ArrowRight size={14} />
             </Button>
           </div>
 
-          <div className="divide-y divide-border rounded-lg border border-border bg-card">
-            {farms.length === 0 ? (
-              <div className="p-4 text-center text-xs text-muted-foreground">
-                No farm loaders configured yet.
-              </div>
-            ) : (
-              farms.slice(0, 3).map((farm) => {
+          {farms.length === 0 ? (
+            <EmptyState
+              icon={Layers}
+              title="No farm loaders configured"
+              description="Add farm coordinates to assign AFK bots."
+              action={
+                <Button size="sm" variant="outline" onClick={() => setActiveTab('farms')}>
+                  Open Farm Loaders
+                </Button>
+              }
+            />
+          ) : (
+            <div className="cc-card" style={{ overflow: 'hidden' }}>
+              {farms.slice(0, 4).map((farm, idx) => {
                 const fx = farm.coordinates?.x ?? farm.x ?? 0;
                 const fy = farm.coordinates?.y ?? farm.y ?? 64;
                 const fz = farm.coordinates?.z ?? farm.z ?? 0;
 
                 return (
-                  <div key={farm.id} className="flex items-center justify-between gap-3 p-3.5">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-success/10 text-success">
-                        <Layers className="size-4" />
+                  <div
+                    key={farm.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      padding: '14px 16px',
+                      borderTop: idx > 0 ? '1px solid var(--border-subtle)' : undefined
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                      <div className="cc-icon-box is-success">
+                        <Layers size={16} />
                       </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-foreground">{farm.name}</p>
-                        <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                      <div style={{ minWidth: 0 }}>
+                        <p className="cc-truncate" style={{ fontSize: 13, fontWeight: 600 }}>{farm.name}</p>
+                        <p className="cc-mono cc-truncate" style={{ marginTop: 2, fontSize: 11, color: 'var(--text-muted)' }}>
                           {fx}, {fy}, {fz}
                         </p>
                       </div>
                     </div>
-                    <Badge tone="neutral">{farm.type || 'Custom Farm'}</Badge>
+                    <StatusBadge tone="neutral">{farm.type || 'Custom Farm'}</StatusBadge>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </section>
       </div>
 
-      {/* Full-Width Section: Live Activity Feed */}
+      {/* Live Activity Feed */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Live activity</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h2 style={{ fontSize: 15, fontWeight: 600 }}>Live activity</h2>
+            <p style={{ marginTop: 2, fontSize: 12, color: 'var(--text-muted)' }}>
               Recent server and worker events.
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs cursor-pointer"
-            onClick={() => setActiveTab('activity')}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setActiveTab('activity')}>
             <span>Full audit log</span>
-            <ArrowRight className="size-3.5" />
+            <ArrowRight size={14} />
           </Button>
         </div>
 
-        {/* Compact Activity Table */}
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-[680px] text-left text-xs">
-            <thead className="border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Time</th>
-                <th className="px-4 py-3 font-semibold">Event</th>
-                <th className="px-4 py-3 font-semibold">Description</th>
-                <th className="px-4 py-3 font-semibold">Source</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {activityLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                    No activity logs recorded yet.
+        <ResponsiveTable
+          columns={['Time', 'Event', 'Description', 'Source']}
+          footer="Latest events · live streaming"
+        >
+          {activityLogs.length === 0 ? (
+            <tr>
+              <td colSpan={4} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)' }}>
+                No activity logs recorded yet.
+              </td>
+            </tr>
+          ) : (
+            activityLogs.slice(0, 5).map((log) => {
+              const eventKind = log.type || (log.event?.includes('TP') ? 'Teleport' : log.event?.includes('BOT') ? 'Bot' : 'Server');
+              const badgeTone = eventKind === 'Teleport' ? 'primary' : eventKind === 'Bot' ? 'warning' : 'neutral';
+              const timeFormatted = log.timestamp
+                ? new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
+                : log.time || 'Just now';
+
+              return (
+                <tr key={log.id}>
+                  <td className="cc-mono" style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                    {timeFormatted}
+                  </td>
+                  <td>
+                    <StatusBadge tone={badgeTone}>
+                      {log.event || log.action || 'EVENT'}
+                    </StatusBadge>
+                  </td>
+                  <td style={{ maxWidth: 440 }}>
+                    {log.details || log.description || log.message}
+                  </td>
+                  <td className="cc-mono" style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                    {log.source || 'ControlCenter'}
                   </td>
                 </tr>
-              ) : (
-                activityLogs.slice(0, 4).map((log) => {
-                  const eventKind = log.type || (log.event?.includes('TP') ? 'Teleport' : log.event?.includes('BOT') ? 'Bot' : 'Server');
-                  const badgeTone = eventKind === 'Teleport' ? 'primary' : eventKind === 'Bot' ? 'warning' : 'neutral';
-                  const timeFormatted = log.timestamp 
-                    ? new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
-                    : log.time || 'Just now';
-
-                  return (
-                    <tr key={log.id} className="hover:bg-muted/20">
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-muted-foreground">
-                        {timeFormatted}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge tone={badgeTone}>
-                          {log.event || log.action || 'EVENT'}
-                        </Badge>
-                      </td>
-                      <td className="max-w-[440px] px-4 py-3 text-foreground">
-                        {log.details || log.description || log.message}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-muted-foreground">
-                        {log.source || 'ControlCenter'}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-          <div className="border-t border-border px-4 py-2 text-[10px] text-muted-foreground">
-            Latest events <span className="mx-1">·</span> live streaming
-          </div>
-        </div>
+              );
+            })
+          )}
+        </ResponsiveTable>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-border py-4 text-[10px] text-muted-foreground">
-        <span>{worldName} Control Center <span className="mx-1">·</span> BDS v{bdsVersion}</span>
-        <span className="flex items-center gap-1.5">
-          <StatusDot tone={serverMetrics?.online ? "success" : "neutral"} />
-          <span>{serverMetrics?.online ? "Production BDS Online" : "Production BDS Offline"}</span>
-          <span className="mx-1">·</span>
-          <span>{targetAddress}</span>
+      <footer
+        style={{
+          marginTop: 36,
+          paddingTop: 16,
+          borderTop: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          fontSize: 11,
+          color: 'var(--text-muted)'
+        }}
+      >
+        <span>{worldName} Control Center · BDS v{bdsVersion}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <StatusDot tone={serverMetrics?.online ? 'success' : 'muted'} />
+          <span>{serverMetrics?.online ? 'Production BDS Online' : 'Production BDS Offline'} · {targetAddress}</span>
         </span>
       </footer>
     </div>

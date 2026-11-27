@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { PageHeader, Badge, StatusDot, Button } from './ui/Shared';
-import { Terminal, Send, CheckCircle2 } from 'lucide-react';
+import { PageHeader, StatusBadge, StatusDot, Button } from './ui/Shared';
+import { Send } from 'lucide-react';
 
 export function ConsoleView() {
   const { sendConsoleCommand, settings, bots, serverMetrics } = useControlCenter();
@@ -17,7 +17,6 @@ export function ConsoleView() {
     `[${new Date().toLocaleTimeString('en-US')}] Pterodactyl command dispatcher ready`,
   ]);
 
-  // Update the initial logs once settings are available
   useEffect(() => {
     if (initDone || !settings?.bedrock?.host) return;
     setInitDone(true);
@@ -52,13 +51,13 @@ export function ConsoleView() {
       const resTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
       if (res?.success) {
         setConsoleLogs(prev => [
-          ...prev, 
+          ...prev,
           `[${resTime}] Command [${finalCmd}] dispatched successfully to Bedrock Dedicated Server.`
         ]);
       } else {
         setConsoleLogs(prev => [
-          ...prev, 
-          `[${resTime}] Command [${finalCmd}] dispatched via Pterodactyl API.`
+          ...prev,
+          `[${resTime}] Command [${finalCmd}] failed: ${res?.error || 'Check Pterodactyl API settings.'}`
         ]);
       }
     } catch (err) {
@@ -80,34 +79,29 @@ export function ConsoleView() {
     { label: 'coords on', cmd: 'gamerule showcoordinates true' }
   ];
 
-  const handlePreset = (preset) => {
-    handleSendCommand(preset.cmd);
-  };
-
   return (
     <div>
-      {/* Page Header */}
       <PageHeader
         eyebrow="Infrastructure / BDS"
         title="Server console"
-        detail="Command dispatch and connection output via AcidoHost Pterodactyl."
+        detail="Command dispatch and connection output via Pterodactyl API."
         actions={
-          <Badge tone={serverMetrics?.online ? "success" : "neutral"}>
-            <StatusDot tone={serverMetrics?.online ? "success" : "neutral"} />
-            <span>{serverMetrics?.online ? "BDS connected" : "BDS disconnected"}</span>
-          </Badge>
+          <StatusBadge tone={serverMetrics?.online ? 'success' : 'neutral'}>
+            <StatusDot tone={serverMetrics?.online ? 'success' : 'neutral'} />
+            <span>{serverMetrics?.online ? 'BDS connected' : 'BDS disconnected'}</span>
+          </StatusBadge>
         }
       />
 
-      {/* Quick Console Presets Row */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      {/* Quick Presets */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         {presets.map((preset) => (
           <Button
             key={preset.label}
             variant="outline"
             size="sm"
-            className="font-mono h-8 text-[10px]"
-            onClick={() => handlePreset(preset)}
+            className="cc-mono"
+            onClick={() => handleSendCommand(preset.cmd)}
             disabled={sending}
           >
             {preset.label}
@@ -115,85 +109,116 @@ export function ConsoleView() {
         ))}
       </div>
 
-      {/* Terminal Window */}
-      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        {/* macOS Control Bar */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-          <div className="flex gap-1.5">
-            <span className="size-2.5 rounded-full bg-danger" />
-            <span className="size-2.5 rounded-full bg-warning" />
-            <span className="size-2.5 rounded-full bg-success" />
+      {/* Always-Dark Terminal Window */}
+      <section className="cc-card" style={{ overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--border-subtle)'
+          }}
+        >
+          <div style={{ display: 'flex', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--danger)' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--warning)' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--success)' }} />
           </div>
 
-          <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
+          <span className="cc-mono cc-truncate" style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--text-muted)' }}>
             container@pterodactyl: /srv/daemon/bds
           </span>
 
-          <Badge tone="success">
+          <StatusBadge tone="success">
             <StatusDot tone="success" />
             <span>Connected</span>
-          </Badge>
+          </StatusBadge>
         </div>
 
-        {/* Terminal Screen Body */}
-        <div 
-          ref={scrollRef}
-          className="min-h-[340px] max-h-[500px] overflow-y-auto space-y-2 bg-foreground p-4 font-mono text-[11px] leading-relaxed text-background sm:p-6"
-        >
-          {consoleLogs.map((line, idx) => {
-            const isSuccess = line.includes('successfully') || line.includes('established') || line.includes('ready');
-            const isCommand = line.includes('> ');
-            const isError = line.includes('Error');
+        <div ref={scrollRef} className="cc-terminal-body">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {consoleLogs.map((line, idx) => {
+              const isSuccess = line.includes('successfully') || line.includes('established') || line.includes('ready');
+              const isCommand = line.includes('> ');
+              const isError = line.includes('Error') || line.includes('failed');
 
-            return (
-              <p
-                key={`${idx}-${line}`}
-                className={
-                  isSuccess 
-                    ? 'text-success' 
-                    : isCommand 
-                      ? 'text-primary-foreground font-semibold' 
-                      : isError 
-                        ? 'text-danger' 
-                        : 'text-background/70'
-                }
-              >
-                {line}
-              </p>
-            );
-          })}
+              const color = isSuccess
+                ? '#4ade80'
+                : isCommand
+                  ? '#93c5fd'
+                  : isError
+                    ? '#f87171'
+                    : '#cbd5e1';
 
-          {/* Interactive Command Input Line */}
-          <div className="mt-4 flex items-center gap-2 border-t border-background/15 pt-4">
-            <span className="text-success font-bold">&gt;&gt;</span>
+              return (
+                <p key={`${idx}-${line}`} style={{ color, wordBreak: 'break-word' }}>
+                  {line}
+                </p>
+              );
+            })}
+          </div>
+
+          <div
+            style={{
+              marginTop: 18,
+              paddingTop: 14,
+              borderTop: '1px solid rgba(148, 163, 184, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}
+          >
+            <span style={{ color: '#4ade80', fontWeight: 700 }}>&gt;&gt;</span>
             <input
               aria-label="Console command"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendCommand()}
-              placeholder={bots.length > 0 ? `Enter command... (e.g. tp ${bots[0].name} 0 64 0 or list)` : "Enter command... (e.g. list, time set day)"}
-              className="min-w-0 flex-1 bg-transparent text-background outline-none placeholder:text-background/40 font-mono text-[11px]"
+              placeholder={bots.length > 0 ? `Enter command... (e.g. tp ${bots[0].name} 0 64 0 or list)` : 'Enter command... (e.g. list, time set day)'}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: '#f8fafc',
+                fontFamily: 'inherit',
+                fontSize: 12
+              }}
             />
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-xs"
               onClick={() => handleSendCommand()}
               disabled={sending}
+              style={{ background: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
             >
-              <Send className="size-3.5" />
+              <Send size={13} />
               <span>{sending ? 'Sending...' : 'Send'}</span>
             </Button>
           </div>
         </div>
 
-        {/* Terminal Bottom Status Bar */}
-        <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1.5">
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            padding: '10px 16px',
+            borderTop: '1px solid var(--border-subtle)',
+            fontSize: 11,
+            color: 'var(--text-muted)'
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <StatusDot tone="success" />
             <span>Session open</span>
           </span>
-          <span className="font-mono">Target: {targetAddress}</span>
+          <span className="cc-mono">Target: {targetAddress}</span>
         </div>
       </section>
     </div>

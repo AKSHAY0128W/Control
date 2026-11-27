@@ -1,42 +1,45 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { 
-  PageHeader, 
-  Badge, 
-  StatusDot, 
-  CoordinateBadge, 
-  Switch, 
-  Button 
+import {
+  PageHeader,
+  StatusBadge,
+  StatusDot,
+  CoordinateBadge,
+  Switch,
+  EmptyState,
+  ConfirmDialog,
+  Button
 } from './ui/Shared';
-import { 
-  Bot, 
-  Cpu, 
-  Clock, 
-  Pencil, 
-  Trash2, 
-  Radio, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Zap, 
-  RefreshCw, 
-  Plus 
+import {
+  Bot,
+  Cpu,
+  Clock,
+  Pencil,
+  Trash2,
+  Radio,
+  CheckCircle2,
+  AlertTriangle,
+  Zap,
+  RefreshCw,
+  Plus
 } from 'lucide-react';
 
 export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTeleport }) {
-  const { 
-    bots, 
-    farms, 
-    teleportBot, 
-    updateBot, 
-    toggleBot, 
-    deleteBot, 
-    syncRender, 
+  const {
+    bots,
+    farms,
+    teleportBot,
+    updateBot,
+    toggleBot,
+    deleteBot,
+    syncRender,
     settings,
-    setLastNotification 
+    setLastNotification
   } = useControlCenter();
 
   const [teleportingId, setTeleportingId] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState(null);
 
   const handleInstantTeleport = async (bot) => {
     setTeleportingId(bot.id);
@@ -55,7 +58,7 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
   };
 
   const handleToggleAutoTp = async (bot) => {
-    await updateBot(bot.id, { 
+    await updateBot(bot.id, {
       autoTeleport: !(bot.autoTeleport ?? bot.autoTp ?? true),
       autoTp: !(bot.autoTeleport ?? bot.autoTp ?? true)
     });
@@ -83,222 +86,235 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
 
   return (
     <div>
-      {/* Page Header with Action Buttons */}
       <PageHeader
         eyebrow="Workers / Render orchestrator"
         title="Bot manager"
         detail="Review worker location, farm targets, and restart behavior."
         actions={
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualSyncRender}
-              disabled={syncing}
-              className="gap-2"
-            >
-              <RefreshCw className={`size-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            <Button variant="outline" size="sm" onClick={handleManualSyncRender} disabled={syncing}>
+              <RefreshCw
+                size={14}
+                style={syncing ? { animation: 'spin 1s linear infinite' } : undefined}
+              />
               <span>{syncing ? 'Syncing...' : 'Sync to Render'}</span>
             </Button>
-            <Button
-              size="sm"
-              onClick={onOpenAddBot}
-              className="gap-2"
-            >
-              <Plus className="size-4" />
+            <Button size="sm" onClick={onOpenAddBot}>
+              <Plus size={15} />
               <span>Register new bot</span>
             </Button>
           </>
         }
       />
 
-      {/* Render Service Information Strip */}
-      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Cpu className="size-4" />
-          </span>
-          <span className="font-semibold text-foreground">Render worker service</span>
+      {/* Render Worker Strip */}
+      <div
+        className="cc-card"
+        style={{
+          marginBottom: 20,
+          padding: '12px 16px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '10px 20px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="cc-icon-box" style={{ width: 32, height: 32 }}>
+            <Cpu size={15} />
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Render worker service</span>
         </div>
 
-        <span className="font-mono text-[11px] text-muted-foreground">
+        <span className="cc-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
           {settings?.render?.serviceId || 'srv-cba31dh5efls73cocdm0'}
         </span>
 
-        <Badge tone="success">
-          <CheckCircle2 className="size-3" />
+        <StatusBadge tone="success">
+          <CheckCircle2 size={12} />
           <span>Auto-sync ready</span>
-        </Badge>
+        </StatusBadge>
 
-        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-warning">
-          <Clock className="size-3.5" />
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--warning)' }}>
+          <Clock size={13} />
           <span>10m keep-alive guard active</span>
         </span>
       </div>
 
       {/* Bot Cards Grid */}
       {bots.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center">
-          <Bot className="mx-auto size-10 text-muted-foreground opacity-50" />
-          <h3 className="mt-3 text-sm font-semibold text-foreground">No bots registered</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Register your first AFK bot worker to keep your Bedrock farms chunk-loaded.
-          </p>
-          <Button size="sm" onClick={onOpenAddBot} className="mt-4 gap-2">
-            <Plus className="size-4" />
-            <span>Register new bot</span>
-          </Button>
-        </div>
+        <EmptyState
+          icon={Bot}
+          title="No bots registered"
+          description="Register your first AFK bot worker to keep your Bedrock farms chunk-loaded."
+          action={
+            <Button size="sm" onClick={onOpenAddBot}>
+              <Plus size={15} />
+              <span>Register new bot</span>
+            </Button>
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="cc-grid-2">
           {bots.map((bot) => {
             const isEnabled = bot.enabled !== false && (bot.status === 'online' || bot.status === 'connecting' || bot.status === 'reconnecting');
             const autoTp = bot.autoTeleport ?? bot.autoTp ?? true;
 
-            // Target coordinates from assigned farm or bot object
             const farm = farms.find(f => f.id === bot.farmId || f.name === bot.assignedFarm || f.name === bot.targetFarm);
             const targetCoords = bot.targetCoordinates || (farm ? { x: farm.coordinates?.x ?? farm.x ?? 0, y: farm.coordinates?.y ?? farm.y ?? 64, z: farm.coordinates?.z ?? farm.z ?? 0 } : { x: bot.x ?? 0, y: bot.y ?? 64, z: bot.z ?? 0 });
             const currentCoords = bot.currentCoordinates || { x: bot.x ?? 0, y: bot.y ?? 64, z: bot.z ?? 0 };
 
             const distance = calculateDistance(targetCoords, currentCoords);
             const isAtFarm = distance <= 10;
-            const statusTone = bot.status === 'online' ? (isAtFarm ? 'success' : 'warning') 
-              : bot.status === 'connecting' || bot.status === 'reconnecting' ? 'warning' 
-              : 'neutral';
+            const statusTone = bot.status === 'online' ? (isAtFarm ? 'success' : 'warning')
+              : bot.status === 'connecting' || bot.status === 'reconnecting' ? 'warning'
+                : 'neutral';
             const isTeleporting = teleportingId === bot.id;
 
             return (
-              <article key={bot.id} className="rounded-lg border border-border bg-card shadow-sm">
-                {/* Bot Card Header */}
-                <div className="flex flex-wrap items-start gap-3 border-b border-border p-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Bot className="size-5" />
+              <article key={bot.id} className="cc-card" style={{ overflow: 'hidden' }}>
+                {/* Header */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    padding: 16,
+                    borderBottom: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  <div className="cc-icon-box" style={{ width: 40, height: 40 }}>
+                    <Bot size={19} />
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold text-foreground">{bot.name}</h3>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                      <h3 style={{ fontSize: 14, fontWeight: 600 }}>{bot.name}</h3>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-6 text-muted-foreground hover:text-foreground"
                         aria-label={`Edit ${bot.name}`}
                         onClick={() => onOpenEditCoords(bot)}
+                        style={{ width: 26, height: 26 }}
                       >
-                        <Pencil className="size-3" />
+                        <Pencil size={13} />
                       </Button>
-                      <Badge tone="neutral">
+                      <StatusBadge tone="neutral">
                         {farm?.name || bot.assignedFarm || 'Unassigned'}
-                      </Badge>
+                      </StatusBadge>
                     </div>
 
-                    <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}>
                       <StatusDot tone={isEnabled ? 'success' : 'muted'} />
                       <span>
-                        {bot.status === 'online' ? 'Connected · in game' 
+                        {bot.status === 'online' ? 'Connected · in game'
                           : bot.status === 'connecting' ? 'Connecting...'
-                          : bot.status === 'reconnecting' ? 'Reconnecting...'
-                          : 'Paused · not in game'}
+                            : bot.status === 'reconnecting' ? 'Reconnecting...'
+                              : 'Paused · not in game'}
                       </span>
                     </div>
                   </div>
 
-                  <Badge tone={statusTone}>
-                    {bot.status === 'online' 
-                      ? (isAtFarm ? 'Online · at farm' : 'Misplaced') 
+                  <StatusBadge tone={statusTone}>
+                    {bot.status === 'online'
+                      ? (isAtFarm ? 'Online · at farm' : 'Misplaced')
                       : bot.status === 'connecting' ? 'Connecting...'
-                      : bot.status === 'reconnecting' ? 'Reconnecting...'
-                      : 'Paused'}
-                  </Badge>
+                        : bot.status === 'reconnecting' ? 'Reconnecting...'
+                          : 'Paused'}
+                  </StatusBadge>
 
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-8 text-muted-foreground hover:text-destructive cursor-pointer"
                     aria-label={`Delete ${bot.name}`}
-                    onClick={() => {
-                      if (confirm(`Remove bot "${bot.name}"? This will pause it and remove it from Render synchronization.`)) {
-                        deleteBot(bot.id);
-                      }
-                    }}
+                    onClick={() => setConfirmTarget(bot)}
+                    style={{ width: 32, height: 32, color: 'var(--danger)' }}
                   >
-                    <Trash2 className="size-4" />
+                    <Trash2 size={15} />
                   </Button>
                 </div>
 
-                {/* Sub-Boxes: Target Farm vs Current Position */}
-                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
-                  {/* Target Coordinates Box */}
-                  <div className="rounded-md border border-border bg-muted/30 p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Target farm
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-1.5 text-[10px]"
-                        onClick={() => onOpenEditCoords(bot)}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                    <CoordinateBadge
-                      x={targetCoords.x}
-                      y={targetCoords.y}
-                      z={targetCoords.z}
-                    />
-                    <p className="mt-2 font-mono text-[10px] text-muted-foreground">
-                      Overworld <span className="mx-1">·</span> {farm?.name || bot.assignedFarm || 'No farm'}
+                {/* Coordinates Split */}
+                <div className="cc-grid-2" style={{ gap: 12, padding: 16 }}>
+                  <div
+                    style={{
+                      padding: 12,
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                      background: 'var(--bg-surface-alt)'
+                    }}
+                  >
+                    <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>
+                      Target farm
+                    </p>
+                    <CoordinateBadge x={targetCoords.x} y={targetCoords.y} z={targetCoords.z} />
+                    <p className="cc-mono" style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+                      Overworld · {farm?.name || bot.assignedFarm || 'No farm'}
                     </p>
                   </div>
 
-                  {/* Current Position Box */}
-                  <div className="rounded-md border border-border bg-muted/30 p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div
+                    style={{
+                      padding: 12,
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                      background: 'var(--bg-surface-alt)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
                         Current position
                       </span>
-                      <span className="flex items-center gap-1 text-[9px] text-success font-medium">
-                        <Radio className="size-3" />
-                        Live packet
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: 'var(--success)' }}>
+                        <Radio size={11} />
+                        <span>Live packet</span>
                       </span>
                     </div>
-                    <CoordinateBadge
-                      x={currentCoords.x}
-                      y={currentCoords.y}
-                      z={currentCoords.z}
-                    />
-                    <p className="mt-2 font-mono text-[10px] text-muted-foreground">
-                      <span className="capitalize">{settings?.bedrock?.transport || 'NetherNet'}</span> <span className="mx-1">·</span> BDS
+                    <CoordinateBadge x={currentCoords.x} y={currentCoords.y} z={currentCoords.z} />
+                    <p className="cc-mono" style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+                      <span style={{ textTransform: 'capitalize' }}>{settings?.bedrock?.transport || 'NetherNet'}</span> · BDS
                     </p>
                   </div>
                 </div>
 
-                {/* Distance Status Strip */}
-                <div className={`mx-4 mb-2 flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-[11px] ${
-                  isAtFarm 
-                    ? 'border-success/20 bg-success/5 text-success' 
-                    : 'border-warning/25 bg-warning/5 text-warning'
-                }`}>
-                  {isAtFarm ? (
-                    <CheckCircle2 className="size-3.5" />
-                  ) : (
-                    <AlertTriangle className="size-3.5" />
-                  )}
-                  <span className="font-medium">
-                    {isAtFarm 
-                      ? 'Position: At Farm · Optimal chunk loading' 
+                {/* Distance Strip */}
+                <div
+                  style={{
+                    margin: '0 16px 12px',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${isAtFarm ? 'var(--success-border)' : 'var(--warning-border)'}`,
+                    background: isAtFarm ? 'var(--success-soft)' : 'var(--warning-soft)',
+                    color: isAtFarm ? 'var(--success)' : 'var(--warning)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12,
+                    fontWeight: 500
+                  }}
+                >
+                  {isAtFarm ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+                  <span>
+                    {isAtFarm
+                      ? 'Position: At Farm · Optimal chunk loading'
                       : `Misplaced: ${distance} blocks away · Needs teleport`}
                   </span>
                 </div>
 
-                {/* Divided Switches Row */}
-                <div className="grid grid-cols-1 divide-y divide-border border-t border-border px-4 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-                  <label className="flex items-center justify-between gap-3 py-3 pr-0 sm:pr-4 cursor-pointer">
+                {/* Switches */}
+                <div
+                  className="cc-grid-2"
+                  style={{
+                    gap: 0,
+                    borderTop: '1px solid var(--border-subtle)',
+                    padding: '0 16px'
+                  }}
+                >
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', cursor: 'pointer' }}>
                     <span>
-                      <span className="block text-xs font-medium text-foreground">Active in BDS</span>
-                      <span className="text-[10px] text-muted-foreground">Worker runs on Render</span>
+                      <span style={{ display: 'block', fontSize: 12, fontWeight: 500 }}>Active in BDS</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Worker runs on Render</span>
                     </span>
                     <Switch
                       checked={isEnabled}
@@ -307,10 +323,10 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
                     />
                   </label>
 
-                  <label className="flex items-center justify-between gap-3 py-3 sm:pl-4 cursor-pointer">
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', cursor: 'pointer' }}>
                     <span>
-                      <span className="block text-xs font-medium text-foreground">Auto-teleport on reboot</span>
-                      <span className="text-[10px] text-muted-foreground">Relocate after server restart</span>
+                      <span style={{ display: 'block', fontSize: 12, fontWeight: 500 }}>Auto-teleport on reboot</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Relocate after server restart</span>
                     </span>
                     <Switch
                       checked={autoTp}
@@ -320,23 +336,13 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
                   </label>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2 border-t border-border p-4">
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    disabled={isTeleporting}
-                    onClick={() => handleInstantTeleport(bot)}
-                  >
-                    <Zap className={`size-3.5 ${isTeleporting ? 'animate-pulse' : ''}`} />
+                {/* Actions */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16, borderTop: '1px solid var(--border-subtle)' }}>
+                  <Button size="sm" style={{ flex: 1 }} disabled={isTeleporting} onClick={() => handleInstantTeleport(bot)}>
+                    <Zap size={14} />
                     <span>{isTeleporting ? 'Teleporting...' : 'Teleport to farm'}</span>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => onOpenCustomTeleport(bot)}
-                  >
+                  <Button variant="outline" size="sm" style={{ flex: 1 }} onClick={() => onOpenCustomTeleport(bot)}>
                     Custom TP
                   </Button>
                 </div>
@@ -345,6 +351,19 @@ export function BotManager({ onOpenAddBot, onOpenEditCoords, onOpenCustomTelepor
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmTarget)}
+        title={`Remove bot "${confirmTarget?.name}"?`}
+        message="This will stop the worker and remove it from Render synchronization."
+        confirmLabel="Remove bot"
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={async () => {
+          const id = confirmTarget?.id;
+          setConfirmTarget(null);
+          if (id) await deleteBot(id);
+        }}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
 import { api } from '../services/api';
-import { Button, Badge, StatusDot } from './ui/Shared';
+import { Button, StatusBadge, StatusDot } from './ui/Shared';
 import { Server, Globe, Radio, ArrowRight, RefreshCw, LogOut, Sparkles } from 'lucide-react';
 
 export function ServerSetupView() {
@@ -74,130 +74,125 @@ export function ServerSetupView() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <div className="w-full max-w-[480px]">
-        {/* Brand Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <Server className="size-5" />
-            </span>
-            <div>
-              <p className="text-base font-bold text-foreground">
+    <main className="cc-auth-page">
+      <div style={{ width: '100%', maxWidth: 480 }}>
+        {/* Header Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <div className="cc-brand-icon" style={{ width: 42, height: 42 }}>
+              <Server size={18} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p className="cc-truncate" style={{ fontSize: 16, fontWeight: 700 }}>
                 {worldName.trim() || 'Bedrock Control Center'}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Signed in as <span className="font-medium text-foreground">{user?.name || user?.username}</span>
+              <p className="cc-truncate" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                Signed in as <strong style={{ color: 'var(--text-primary)' }}>{user?.name || user?.username}</strong>
               </p>
             </div>
           </div>
 
-          <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5 text-xs text-muted-foreground">
-            <LogOut className="size-3.5" />
+          <Button variant="ghost" size="sm" onClick={logout}>
+            <LogOut size={14} />
             <span>Sign out</span>
           </Button>
         </div>
 
         {/* Setup Card */}
-        <section className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
-          <div className="mb-6">
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-              <Sparkles className="size-3.5" />
+        <section className="cc-card" style={{ padding: 28 }}>
+          <div style={{ marginBottom: 22 }}>
+            <StatusBadge tone="primary" className="mb-2">
+              <Sparkles size={12} />
               <span>Initial Server Setup</span>
-            </div>
-            <h1 className="text-xl font-semibold text-foreground">Connect your Bedrock server</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
+            </StatusBadge>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginTop: 10 }}>Connect your Bedrock server</h1>
+            <p style={{ marginTop: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
               Enter your server details below. Your World Name becomes your panel name.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-              <span>World / Panel Name</span>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <label className="cc-field">
+              <span className="cc-field-label">World / Panel Name</span>
               <input
                 value={worldName}
                 onChange={(e) => setWorldName(e.target.value)}
                 placeholder="e.g. Survival SMP"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="cc-input"
               />
             </label>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_110px]">
-              <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Globe className="size-3.5" />
-                  Server IP / Hostname
+            <div className="cc-grid-2" style={{ gap: 12 }}>
+              <label className="cc-field">
+                <span className="cc-field-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Globe size={13} />
+                  <span>Server IP / Hostname</span>
                 </span>
                 <input
                   value={host}
                   onChange={(e) => setHost(e.target.value)}
                   placeholder="e.g. play.myserver.net"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 font-mono text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="cc-input cc-mono"
                 />
               </label>
 
-              <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-                <span>Port</span>
+              <label className="cc-field">
+                <span className="cc-field-label">Port</span>
                 <input
                   type="number"
                   value={port}
                   onChange={(e) => setPort(e.target.value)}
                   placeholder="19132"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 font-mono text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="cc-input cc-mono"
                 />
               </label>
             </div>
 
-            <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Radio className="size-3.5" />
-                Transport Protocol
+            <label className="cc-field">
+              <span className="cc-field-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Radio size={13} />
+                <span>Transport Protocol</span>
               </span>
               <select
                 value={transport}
                 onChange={(e) => setTransport(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="cc-select"
               >
                 <option value="nethernet">NetherNet (Bedrock Dedicated Server)</option>
                 <option value="raknet">RakNet / UDP</option>
               </select>
             </label>
 
-            {/* Test Connection Row */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleTest}
-                disabled={testing}
-                className="gap-2"
-              >
-                <RefreshCw className={`size-3.5 ${testing ? 'animate-spin' : ''}`} />
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
+              <Button type="button" variant="outline" size="sm" onClick={handleTest} disabled={testing}>
+                <RefreshCw
+                  size={13}
+                  style={testing ? { animation: 'spin 1s linear infinite' } : undefined}
+                />
                 <span>{testing ? 'Testing...' : 'Test connection'}</span>
               </Button>
 
               {testResult && (
-                <Badge tone={testResult.success ? 'success' : 'warning'}>
+                <StatusBadge tone={testResult.success ? 'success' : 'warning'}>
                   <StatusDot tone={testResult.success ? 'success' : 'warning'} />
                   <span>
                     {testResult.success
                       ? `Online · ${testResult.latencyMs ?? '?'}ms (v${testResult.data?.version || '?'})`
-                      : 'Server unreachable (you can still save)'}
+                      : 'Unreachable (you can still save)'}
                   </span>
-                </Badge>
+                </StatusBadge>
               )}
             </div>
 
             {error && (
-              <p role="alert" className="text-xs font-medium text-danger">
+              <p role="alert" style={{ fontSize: 12, fontWeight: 500, color: 'var(--danger)' }}>
                 {error}
               </p>
             )}
 
-            <Button type="submit" disabled={saving} className="w-full gap-2 mt-2 h-10">
+            <Button type="submit" disabled={saving} style={{ width: '100%', marginTop: 4 }}>
               <span>{saving ? 'Saving configuration...' : 'Launch Control Center'}</span>
-              <ArrowRight className="size-4" />
+              <ArrowRight size={15} />
             </Button>
           </form>
         </section>

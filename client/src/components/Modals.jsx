@@ -3,24 +3,32 @@ import { useControlCenter } from '../context/ControlCenterContext';
 import { Button, InputField } from './ui/Shared';
 import { X, Bot, Layers, Zap } from 'lucide-react';
 
-// Modal Base Wrapper matching Lovable Dialog
-function ModalWrapper({ children, onClose, maxWidth = 'max-w-md' }) {
+function ModalWrapper({ children, onClose }) {
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0"
-      onClick={onClose}
-    >
-      <div 
-        className={`w-full ${maxWidth} rounded-lg border border-border bg-card p-6 shadow-xl transition-all space-y-4`}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="cc-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="cc-modal" onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
   );
 }
 
-// 1. Add / Register Bot Modal
+function ModalHeader({ icon: Icon, iconTone = 'primary', title, onClose }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className={`cc-icon-box ${iconTone === 'success' ? 'is-success' : ''}`} style={{ width: 32, height: 32 }}>
+          <Icon size={16} />
+        </div>
+        <h2 style={{ fontSize: 15, fontWeight: 600 }}>{title}</h2>
+      </div>
+      <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close dialog" style={{ width: 30, height: 30 }}>
+        <X size={15} />
+      </Button>
+    </div>
+  );
+}
+
 export function AddBotModal({ onClose }) {
   const { addBot, farms, setLastNotification } = useControlCenter();
   const [name, setName] = useState('');
@@ -60,9 +68,7 @@ export function AddBotModal({ onClose }) {
         active: true,
         autoTeleport: true
       });
-      if (setLastNotification) {
-        setLastNotification({ type: 'success', text: `Bot ${name.trim()} registered and queued for deployment.` });
-      }
+      setLastNotification?.({ type: 'success', text: `Bot ${name.trim()} registered and queued for deployment.` });
       onClose();
     } finally {
       setSubmitting(false);
@@ -71,38 +77,19 @@ export function AddBotModal({ onClose }) {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Bot className="size-4" />
-          </span>
-          <h2 className="text-base font-semibold text-foreground">Register new bot</h2>
-        </div>
-        <button 
-          onClick={onClose} 
-          className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-
-      <form onSubmit={handleSave} className="space-y-4 pt-1">
+      <ModalHeader icon={Bot} title="Register new bot" onClose={onClose} />
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <InputField
           label="Bot Player Name (Minecraft Username)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. IronBot3"
-          required
         />
 
         {farms.length > 0 && (
-          <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Assign to Target Farm</span>
-            <select
-              value={farmId}
-              onChange={(e) => handleFarmSelect(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+          <label className="cc-field">
+            <span className="cc-field-label">Assign to Target Farm</span>
+            <select value={farmId} onChange={(e) => handleFarmSelect(e.target.value)} className="cc-select">
               {farms.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.name} ({f.coordinates?.x ?? f.x}, {f.coordinates?.y ?? f.y}, {f.coordinates?.z ?? f.z})
@@ -112,50 +99,21 @@ export function AddBotModal({ onClose }) {
           </label>
         )}
 
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground">Target Coordinates</span>
-          <div className="grid grid-cols-3 gap-2">
-            <InputField
-              label="X"
-              value={x}
-              onChange={(e) => setX(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Y"
-              value={y}
-              onChange={(e) => setY(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Z"
-              value={z}
-              onChange={(e) => setZ(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-          </div>
+        <div className="cc-grid-3" style={{ gap: 10 }}>
+          <InputField label="X" value={x} onChange={(e) => setX(e.target.value)} type="number" mono />
+          <InputField label="Y" value={y} onChange={(e) => setY(e.target.value)} type="number" mono />
+          <InputField label="Z" value={z} onChange={(e) => setZ(e.target.value)} type="number" mono />
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button variant="outline" size="sm" onClick={onClose} type="button">
-            Cancel
-          </Button>
-          <Button size="sm" type="submit" disabled={submitting}>
-            {submitting ? 'Registering...' : 'Register bot'}
-          </Button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+          <Button variant="outline" size="sm" onClick={onClose} type="button">Cancel</Button>
+          <Button size="sm" type="submit" disabled={submitting}>{submitting ? 'Registering...' : 'Register bot'}</Button>
         </div>
       </form>
     </ModalWrapper>
   );
 }
 
-// 2. Edit Bot Coordinates Modal
 export function EditCoordinatesModal({ bot, onClose }) {
   const { updateBot, farms, setLastNotification } = useControlCenter();
   const [name, setName] = useState(bot?.name || '');
@@ -175,9 +133,7 @@ export function EditCoordinatesModal({ bot, onClose }) {
         assignedFarm: farmName,
         targetCoordinates: { x: Number(x), y: Number(y), z: Number(z) }
       });
-      if (setLastNotification) {
-        setLastNotification({ type: 'success', text: `Bot ${name.trim()} settings updated.` });
-      }
+      setLastNotification?.({ type: 'success', text: `Bot ${name.trim()} settings updated.` });
       onClose();
     } finally {
       setSubmitting(false);
@@ -186,186 +142,113 @@ export function EditCoordinatesModal({ bot, onClose }) {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Bot className="size-4" />
-          </span>
-          <h2 className="text-base font-semibold text-foreground">Edit bot: {bot?.name}</h2>
-        </div>
-        <button 
-          onClick={onClose} 
-          className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+      <ModalHeader icon={Bot} title={`Edit bot: ${bot?.name}`} onClose={onClose} />
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <InputField label="Bot Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <InputField label="Assigned Farm Label" value={farmName} onChange={(e) => setFarmName(e.target.value)} />
 
-      <form onSubmit={handleSave} className="space-y-4 pt-1">
-        <InputField
-          label="Bot Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-
-        <InputField
-          label="Assigned Farm Label"
-          value={farmName}
-          onChange={(e) => setFarmName(e.target.value)}
-        />
-
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground">Target Farm Coordinates</span>
-          <div className="grid grid-cols-3 gap-2">
-            <InputField
-              label="X"
-              value={x}
-              onChange={(e) => setX(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Y"
-              value={y}
-              onChange={(e) => setY(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Z"
-              value={z}
-              onChange={(e) => setZ(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
+        {farms.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {farms.map(f => (
+              <Button
+                key={f.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFarmName(f.name);
+                  setX(f.coordinates?.x ?? f.x ?? 0);
+                  setY(f.coordinates?.y ?? f.y ?? 64);
+                  setZ(f.coordinates?.z ?? f.z ?? 0);
+                }}
+              >
+                {f.name}
+              </Button>
+            ))}
           </div>
+        )}
+
+        <div className="cc-grid-3" style={{ gap: 10 }}>
+          <InputField label="X" value={x} onChange={(e) => setX(e.target.value)} type="number" mono />
+          <InputField label="Y" value={y} onChange={(e) => setY(e.target.value)} type="number" mono />
+          <InputField label="Z" value={z} onChange={(e) => setZ(e.target.value)} type="number" mono />
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button variant="outline" size="sm" onClick={onClose} type="button">
-            Cancel
-          </Button>
-          <Button size="sm" type="submit" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save changes'}
-          </Button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+          <Button variant="outline" size="sm" onClick={onClose} type="button">Cancel</Button>
+          <Button size="sm" type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save coordinates'}</Button>
         </div>
       </form>
     </ModalWrapper>
   );
 }
 
-// 3. Custom Teleport Modal
 export function CustomTeleportModal({ bot, onClose }) {
   const { teleportBot, farms, setLastNotification } = useControlCenter();
-  const [x, setX] = useState(bot?.currentCoordinates?.x ?? bot?.x ?? 0);
-  const [y, setY] = useState(bot?.currentCoordinates?.y ?? bot?.y ?? 64);
-  const [z, setZ] = useState(bot?.currentCoordinates?.z ?? bot?.z ?? 0);
-  const [teleporting, setTeleporting] = useState(false);
+  const [x, setX] = useState(bot?.targetCoordinates?.x ?? bot?.x ?? 0);
+  const [y, setY] = useState(bot?.targetCoordinates?.y ?? bot?.y ?? 64);
+  const [z, setZ] = useState(bot?.targetCoordinates?.z ?? bot?.z ?? 0);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleTeleport = async (e) => {
     e.preventDefault();
-    setTeleporting(true);
+    setSubmitting(true);
     try {
       await teleportBot(bot.id, { x: Number(x), y: Number(y), z: Number(z) });
-      if (setLastNotification) {
-        setLastNotification({ type: 'success', text: `Dispatched teleport for ${bot.name} to [${x}, ${y}, ${z}].` });
-      }
+      setLastNotification?.({ type: 'success', text: `Dispatched custom TP for ${bot.name} to (${x}, ${y}, ${z}).` });
       onClose();
     } finally {
-      setTeleporting(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Zap className="size-4" />
-          </span>
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Custom teleport</h2>
-            <p className="text-xs text-muted-foreground">Move {bot?.name || 'bot'} to specified coordinates.</p>
-          </div>
-        </div>
-        <button 
-          onClick={onClose} 
-          className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+      <ModalHeader icon={Zap} title={`Custom TP: ${bot?.name}`} onClose={onClose} />
+      <form onSubmit={handleTeleport} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+          Dispatch an immediate <code className="cc-mono">tp {bot?.name} X Y Z</code> command to Bedrock Dedicated Server.
+        </p>
 
-      <form onSubmit={handleTeleport} className="space-y-4 pt-1">
         {farms.length > 0 && (
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground">Quick Presets</span>
-            <div className="flex flex-wrap gap-1.5">
-              {farms.map((f) => (
-                <button
-                  type="button"
-                  key={f.id}
-                  onClick={() => {
-                    setX(f.coordinates?.x ?? f.x);
-                    setY(f.coordinates?.y ?? f.y);
-                    setZ(f.coordinates?.z ?? f.z);
-                  }}
-                  className="rounded-md border border-border bg-muted/40 px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                >
-                  {f.name}
-                </button>
-              ))}
-            </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {farms.map(f => (
+              <Button
+                key={f.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setX(f.coordinates?.x ?? f.x ?? 0);
+                  setY(f.coordinates?.y ?? f.y ?? 64);
+                  setZ(f.coordinates?.z ?? f.z ?? 0);
+                }}
+              >
+                {f.name}
+              </Button>
+            ))}
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
-          <InputField
-            label="X"
-            value={x}
-            onChange={(e) => setX(e.target.value)}
-            type="number"
-            mono={true}
-            required
-          />
-          <InputField
-            label="Y"
-            value={y}
-            onChange={(e) => setY(e.target.value)}
-            type="number"
-            mono={true}
-            required
-          />
-          <InputField
-            label="Z"
-            value={z}
-            onChange={(e) => setZ(e.target.value)}
-            type="number"
-            mono={true}
-            required
-          />
+        <div className="cc-grid-3" style={{ gap: 10 }}>
+          <InputField label="X" value={x} onChange={(e) => setX(e.target.value)} type="number" mono />
+          <InputField label="Y" value={y} onChange={(e) => setY(e.target.value)} type="number" mono />
+          <InputField label="Z" value={z} onChange={(e) => setZ(e.target.value)} type="number" mono />
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button variant="outline" size="sm" onClick={onClose} type="button">
-            Cancel
-          </Button>
-          <Button size="sm" type="submit" disabled={teleporting}>
-            {teleporting ? 'Teleporting...' : 'Teleport bot'}
-          </Button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+          <Button variant="outline" size="sm" onClick={onClose} type="button">Cancel</Button>
+          <Button size="sm" type="submit" disabled={submitting}>{submitting ? 'Teleporting...' : 'Teleport now'}</Button>
         </div>
       </form>
     </ModalWrapper>
   );
 }
 
-// 4. Add Farm Modal
+const PRESET_TYPES = ['Iron Farm', 'Gold Farm', 'Raid Farm', 'Crop Farm', 'Mob Farm'];
+
 export function AddFarmModal({ onClose }) {
-  const { addFarm, bots, setLastNotification } = useControlCenter();
+  const { addFarm, setLastNotification } = useControlCenter();
   const [name, setName] = useState('');
   const [type, setType] = useState('Iron Farm');
   const [customType, setCustomType] = useState('');
@@ -373,30 +256,22 @@ export function AddFarmModal({ onClose }) {
   const [x, setX] = useState(0);
   const [y, setY] = useState(64);
   const [z, setZ] = useState(0);
-  const [assignedBot, setAssignedBot] = useState(bots[0]?.name || '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-
-    const resolvedType = type === 'Custom Farm' ? (customType.trim() || 'Custom Farm') : type;
+    const finalType = type === 'Custom Farm' ? (customType.trim() || 'Custom Farm') : type;
 
     setSubmitting(true);
     try {
       await addFarm({
         name: name.trim(),
-        type: resolvedType,
+        type: finalType,
         dimension,
-        coordinates: { x: Number(x), y: Number(y), z: Number(z) },
-        x: Number(x),
-        y: Number(y),
-        z: Number(z),
-        assignedBot
+        coordinates: { x: Number(x), y: Number(y), z: Number(z) }
       });
-      if (setLastNotification) {
-        setLastNotification({ type: 'success', text: `Farm "${name.trim()}" added successfully.` });
-      }
+      setLastNotification?.({ type: 'success', text: `Farm "${name.trim()}" (${finalType}) created.` });
       onClose();
     } finally {
       setSubmitting(false);
@@ -405,54 +280,22 @@ export function AddFarmModal({ onClose }) {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-md bg-success/10 text-success">
-            <Layers className="size-4" />
-          </span>
-          <h2 className="text-base font-semibold text-foreground">Add farm loader</h2>
-        </div>
-        <button 
-          onClick={onClose} 
-          className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+      <ModalHeader icon={Layers} iconTone="success" title="Add farm loader" onClose={onClose} />
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <InputField label="Farm Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Raid Farm" />
 
-      <form onSubmit={handleSave} className="space-y-4 pt-1">
-        <InputField
-          label="Farm Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Outpost Slime Farm"
-          required
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Farm Type</span>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="Iron Farm">Iron Farm</option>
-              <option value="Gold Farm">Gold Farm</option>
-              <option value="Raid Farm">Raid Farm</option>
-              <option value="Crop Farm">Crop Farm</option>
-              <option value="Mob Farm">Mob Farm</option>
+        <div className="cc-grid-2" style={{ gap: 12 }}>
+          <label className="cc-field">
+            <span className="cc-field-label">Farm Type</span>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="cc-select">
+              {PRESET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               <option value="Custom Farm">Custom Farm (Specify below)</option>
             </select>
           </label>
 
-          <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Dimension</span>
-            <select
-              value={dimension}
-              onChange={(e) => setDimension(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+          <label className="cc-field">
+            <span className="cc-field-label">Dimension</span>
+            <select value={dimension} onChange={(e) => setDimension(e.target.value)} className="cc-select">
               <option value="Overworld">Overworld</option>
               <option value="Nether">Nether</option>
               <option value="The End">The End</option>
@@ -461,108 +304,48 @@ export function AddFarmModal({ onClose }) {
         </div>
 
         {type === 'Custom Farm' && (
-          <InputField
-            label="Custom Farm Type"
-            value={customType}
-            onChange={(e) => setCustomType(e.target.value)}
-            placeholder="e.g. Copper Farm, Slime Farm, Witch Hut"
-            required
-          />
+          <InputField label="Custom Farm Type" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="e.g. Copper Farm, Witch Hut" />
         )}
 
-        {bots.length > 0 && (
-          <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Assign Worker Bot</span>
-            <select
-              value={assignedBot}
-              onChange={(e) => setAssignedBot(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">Unassigned</option>
-              {bots.map((b) => (
-                <option key={b.id} value={b.name}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground">Coordinates</span>
-          <div className="grid grid-cols-3 gap-2">
-            <InputField
-              label="X"
-              value={x}
-              onChange={(e) => setX(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Y"
-              value={y}
-              onChange={(e) => setY(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Z"
-              value={z}
-              onChange={(e) => setZ(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-          </div>
+        <div className="cc-grid-3" style={{ gap: 10 }}>
+          <InputField label="X" value={x} onChange={(e) => setX(e.target.value)} type="number" mono />
+          <InputField label="Y" value={y} onChange={(e) => setY(e.target.value)} type="number" mono />
+          <InputField label="Z" value={z} onChange={(e) => setZ(e.target.value)} type="number" mono />
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button variant="outline" size="sm" onClick={onClose} type="button">
-            Cancel
-          </Button>
-          <Button size="sm" type="submit" disabled={submitting}>
-            {submitting ? 'Adding...' : 'Save farm'}
-          </Button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+          <Button variant="outline" size="sm" onClick={onClose} type="button">Cancel</Button>
+          <Button size="sm" type="submit" disabled={submitting}>{submitting ? 'Creating...' : 'Create farm'}</Button>
         </div>
       </form>
     </ModalWrapper>
   );
 }
 
-// 5. Edit Farm Modal
 export function EditFarmModal({ farm, onClose }) {
-  const { updateFarm, deleteFarm, bots, setLastNotification } = useControlCenter();
+  const { updateFarm, deleteFarm, setLastNotification } = useControlCenter();
+  const isPreset = PRESET_TYPES.includes(farm?.type);
   const [name, setName] = useState(farm?.name || '');
-  
-  const standardTypes = ['Iron Farm', 'Gold Farm', 'Raid Farm', 'Crop Farm', 'Mob Farm'];
-  const isCustomType = farm?.type && !standardTypes.includes(farm.type);
-  const [type, setType] = useState(isCustomType ? 'Custom Farm' : (farm?.type || 'Iron Farm'));
-  const [customType, setCustomType] = useState(isCustomType ? farm.type : '');
-  
+  const [type, setType] = useState(isPreset ? farm.type : 'Custom Farm');
+  const [customType, setCustomType] = useState(isPreset ? '' : (farm?.type || ''));
   const [dimension, setDimension] = useState(farm?.dimension || 'Overworld');
   const [x, setX] = useState(farm?.coordinates?.x ?? farm?.x ?? 0);
   const [y, setY] = useState(farm?.coordinates?.y ?? farm?.y ?? 64);
   const [z, setZ] = useState(farm?.coordinates?.z ?? farm?.z ?? 0);
-  const [assignedBot, setAssignedBot] = useState(farm?.assignedBot || '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const finalType = type === 'Custom Farm' ? (customType.trim() || 'Custom Farm') : type;
     setSubmitting(true);
-    const resolvedType = type === 'Custom Farm' ? (customType.trim() || 'Custom Farm') : type;
     try {
       await updateFarm(farm.id, {
         name: name.trim(),
-        type: resolvedType,
+        type: finalType,
         dimension,
-        coordinates: { x: Number(x), y: Number(y), z: Number(z) },
-        assignedBot
+        coordinates: { x: Number(x), y: Number(y), z: Number(z) }
       });
-      if (setLastNotification) {
-        setLastNotification({ type: 'success', text: `Farm "${name.trim()}" updated.` });
-      }
+      setLastNotification?.({ type: 'success', text: `Farm "${name.trim()}" updated.` });
       onClose();
     } finally {
       setSubmitting(false);
@@ -571,53 +354,22 @@ export function EditFarmModal({ farm, onClose }) {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-md bg-success/10 text-success">
-            <Layers className="size-4" />
-          </span>
-          <h2 className="text-base font-semibold text-foreground">Edit farm: {farm?.name}</h2>
-        </div>
-        <button 
-          onClick={onClose} 
-          className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+      <ModalHeader icon={Layers} iconTone="success" title={`Edit farm: ${farm?.name}`} onClose={onClose} />
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <InputField label="Farm Name" value={name} onChange={(e) => setName(e.target.value)} />
 
-      <form onSubmit={handleSave} className="space-y-4 pt-1">
-        <InputField
-          label="Farm Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Farm Type</span>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="Iron Farm">Iron Farm</option>
-              <option value="Gold Farm">Gold Farm</option>
-              <option value="Raid Farm">Raid Farm</option>
-              <option value="Crop Farm">Crop Farm</option>
-              <option value="Mob Farm">Mob Farm</option>
+        <div className="cc-grid-2" style={{ gap: 12 }}>
+          <label className="cc-field">
+            <span className="cc-field-label">Farm Type</span>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="cc-select">
+              {PRESET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               <option value="Custom Farm">Custom Farm (Specify below)</option>
             </select>
           </label>
 
-          <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Dimension</span>
-            <select
-              value={dimension}
-              onChange={(e) => setDimension(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+          <label className="cc-field">
+            <span className="cc-field-label">Dimension</span>
+            <select value={dimension} onChange={(e) => setDimension(e.target.value)} className="cc-select">
               <option value="Overworld">Overworld</option>
               <option value="Nether">Nether</option>
               <option value="The End">The End</option>
@@ -626,67 +378,30 @@ export function EditFarmModal({ farm, onClose }) {
         </div>
 
         {type === 'Custom Farm' && (
-          <InputField
-            label="Custom Farm Type"
-            value={customType}
-            onChange={(e) => setCustomType(e.target.value)}
-            placeholder="e.g. Copper Farm, Slime Farm, Witch Hut"
-            required
-          />
+          <InputField label="Custom Farm Type" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="e.g. Copper Farm, Witch Hut" />
         )}
 
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground">Coordinates</span>
-          <div className="grid grid-cols-3 gap-2">
-            <InputField
-              label="X"
-              value={x}
-              onChange={(e) => setX(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Y"
-              value={y}
-              onChange={(e) => setY(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-            <InputField
-              label="Z"
-              value={z}
-              onChange={(e) => setZ(e.target.value)}
-              type="number"
-              mono={true}
-              required
-            />
-          </div>
+        <div className="cc-grid-3" style={{ gap: 10 }}>
+          <InputField label="X" value={x} onChange={(e) => setX(e.target.value)} type="number" mono />
+          <InputField label="Y" value={y} onChange={(e) => setY(e.target.value)} type="number" mono />
+          <InputField label="Z" value={z} onChange={(e) => setZ(e.target.value)} type="number" mono />
         </div>
 
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            type="button" 
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+          <Button
+            variant="destructive"
+            size="sm"
+            type="button"
             onClick={async () => {
-              if (window.confirm(`Delete farm "${farm?.name}"?`)) {
-                await deleteFarm(farm.id);
-                onClose();
-              }
+              await deleteFarm(farm.id);
+              onClose();
             }}
           >
             Delete farm
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose} type="button">
-              Cancel
-            </Button>
-            <Button size="sm" type="submit" disabled={submitting}>
-              {submitting ? 'Saving...' : 'Save changes'}
-            </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="outline" size="sm" onClick={onClose} type="button">Cancel</Button>
+            <Button size="sm" type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save changes'}</Button>
           </div>
         </div>
       </form>

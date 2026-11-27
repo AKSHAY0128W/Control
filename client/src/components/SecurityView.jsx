@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
 import { useControlCenter } from '../context/ControlCenterContext';
-import { 
-  PageHeader, 
-  SectionCard, 
-  InputField, 
-  Badge, 
-  StatusDot, 
-  Button 
+import {
+  PageHeader,
+  SectionCard,
+  InputField,
+  StatusBadge,
+  StatusDot,
+  ResponsiveTable,
+  Button
 } from './ui/Shared';
-import { 
-  ShieldCheck, 
-  UserCheck, 
-  KeyRound, 
-  Lock, 
-  AlertCircle, 
-  CheckCircle2 
-} from 'lucide-react';
+import { ShieldCheck, UserCheck, KeyRound } from 'lucide-react';
 
 export function SecurityView() {
   const { user, changePassword, activityLogs, setLastNotification } = useControlCenter();
@@ -71,60 +65,79 @@ export function SecurityView() {
 
   return (
     <div>
-      {/* Page Header */}
       <PageHeader
         eyebrow="Access / Account"
         title="Security & authentication"
         detail="Operator session details and account credentials."
       />
 
-      {/* Grid Layout */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <div className="space-y-6">
-          {/* Active Session Card */}
+      <div className="cc-grid-2" style={{ alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <SectionCard
             icon={UserCheck}
             title="Active session"
             description="Current operator authentication state"
           >
-            <div className="divide-y divide-border">
-              <div className="flex items-center justify-between py-2.5 text-xs">
-                <span className="text-muted-foreground">Signed in as</span>
-                <span className="font-semibold text-foreground">
-                  {user?.name || user?.username || 'Server Administrator'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 text-xs">
-                <span className="text-muted-foreground">Access role</span>
-                <span className="font-bold text-primary">{user?.role || 'SUPERADMIN'}</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 text-xs">
-                <span className="text-muted-foreground">Token security</span>
-                <span className="font-mono text-[11px] text-foreground">HMAC SHA-256 JWT</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 text-xs">
-                <span className="text-muted-foreground">Session status</span>
-                <Badge tone="success">
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {[
+                { label: 'Signed in as', value: user?.name || user?.username || 'Administrator', bold: true },
+                { label: 'Access role', value: user?.role || 'ADMIN', accent: true },
+                { label: 'Token security', value: 'HMAC SHA-256 JWT', mono: true }
+              ].map((row, idx) => (
+                <div
+                  key={row.label}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 0',
+                    borderTop: idx > 0 ? '1px solid var(--border-subtle)' : undefined,
+                    fontSize: 12
+                  }}
+                >
+                  <span style={{ color: 'var(--text-muted)' }}>{row.label}</span>
+                  <span
+                    className={row.mono ? 'cc-mono' : undefined}
+                    style={{
+                      fontWeight: row.bold || row.accent ? 600 : 400,
+                      color: row.accent ? 'var(--accent)' : 'var(--text-primary)'
+                    }}
+                  >
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 0',
+                  borderTop: '1px solid var(--border-subtle)',
+                  fontSize: 12
+                }}
+              >
+                <span style={{ color: 'var(--text-muted)' }}>Session status</span>
+                <StatusBadge tone="success">
                   <StatusDot tone="success" />
                   <span>Verified session</span>
-                </Badge>
+                </StatusBadge>
               </div>
             </div>
           </SectionCard>
 
-          {/* Change Password Card */}
           <SectionCard
             icon={KeyRound}
             title="Change password"
             description="Update the master operator password"
           >
-            <form onSubmit={handleChangePassword} className="space-y-4">
+            <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <InputField
                 label="Current password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 type="password"
-                placeholder="Current master password"
+                placeholder="Current password"
               />
               <InputField
                 label="New password"
@@ -142,70 +155,51 @@ export function SecurityView() {
               />
 
               {errorMsg && (
-                <p role="alert" className="text-xs text-danger font-medium">
+                <p role="alert" style={{ fontSize: 12, fontWeight: 500, color: 'var(--danger)' }}>
                   {errorMsg}
                 </p>
               )}
 
-              <Button
-                type="submit"
-                variant="outline"
-                size="sm"
-                disabled={loading}
-              >
-                {loading ? 'Updating...' : 'Update password'}
-              </Button>
+              <div>
+                <Button type="submit" variant="outline" size="sm" disabled={loading}>
+                  {loading ? 'Updating...' : 'Update password'}
+                </Button>
+              </div>
             </form>
           </SectionCard>
         </div>
 
-        {/* Column 2: Security Audit Log */}
-        <div>
-          <SectionCard
-            icon={ShieldCheck}
-            title="Security audit"
-            description="Recent sign-in, token, and account security events"
-          >
-            <div className="overflow-x-auto rounded-md border border-border">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2.5">Time</th>
-                    <th className="px-3 py-2.5">Event</th>
-                    <th className="px-3 py-2.5">Source</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {securityLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
-                        No security audit logs recorded yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    securityLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-muted/20">
-                        <td className="whitespace-nowrap px-3 py-2.5 font-mono text-muted-foreground">
-                          {log.timestamp 
-                            ? new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
-                            : log.time || 'Just now'}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <Badge tone="neutral">
-                            {log.event || 'SECURITY_EVENT'}
-                          </Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 font-mono text-muted-foreground">
-                          {log.source || 'AuthService'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </SectionCard>
-        </div>
+        <SectionCard
+          icon={ShieldCheck}
+          title="Security audit"
+          description="Recent sign-in, token, and account security events"
+        >
+          <ResponsiveTable columns={['Time', 'Event', 'Source']}>
+            {securityLogs.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: 'center', padding: '28px 16px', color: 'var(--text-muted)' }}>
+                  No security audit logs recorded yet.
+                </td>
+              </tr>
+            ) : (
+              securityLogs.map((log) => (
+                <tr key={log.id}>
+                  <td className="cc-mono" style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                    {log.timestamp
+                      ? new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
+                      : log.time || 'Just now'}
+                  </td>
+                  <td>
+                    <StatusBadge tone="neutral">{log.event || 'SECURITY_EVENT'}</StatusBadge>
+                  </td>
+                  <td className="cc-mono" style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                    {log.source || 'AuthService'}
+                  </td>
+                </tr>
+              ))
+            )}
+          </ResponsiveTable>
+        </SectionCard>
       </div>
     </div>
   );

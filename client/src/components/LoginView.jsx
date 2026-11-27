@@ -5,7 +5,7 @@ import { Server, Eye, EyeOff, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 
 export function LoginView() {
   const { login, register, serverMetrics, settings } = useControlCenter();
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +33,7 @@ export function LoginView() {
       if (!res?.success) {
         setError(res?.error || 'Authentication failed. Please verify credentials.');
       }
-    } catch (err) {
+    } catch {
       setError('Connection to control center API failed.');
     } finally {
       setLoading(false);
@@ -48,54 +48,59 @@ export function LoginView() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <div className="w-full max-w-[420px]">
+    <main className="cc-auth-page">
+      <div style={{ width: '100%', maxWidth: 420 }}>
         {/* Brand Header */}
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Server className="size-5" />
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 24 }}>
+          <div className="cc-brand-icon" style={{ width: 44, height: 44 }}>
+            <Server size={20} />
+          </div>
           <div>
-            <p className="text-lg font-bold text-foreground">{panelName}</p>
-            <p className="text-xs text-muted-foreground">Bedrock Server &amp; AFK Bot Control</p>
+            <p style={{ fontSize: 18, fontWeight: 700 }}>{panelName}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Bedrock Server &amp; AFK Bot Control</p>
           </div>
         </div>
 
         {/* Auth Card */}
-        <section className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
+        <section className="cc-card" style={{ padding: 28 }}>
           {/* Mode Switcher */}
-          <div className="mb-6 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/50 p-1">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 6,
+              padding: 4,
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--bg-surface-alt)',
+              border: '1px solid var(--border-subtle)',
+              marginBottom: 22
+            }}
+          >
             <button
               type="button"
               onClick={() => { setMode('login'); setError(''); }}
-              className={`flex items-center justify-center gap-1.5 rounded py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                mode === 'login'
-                  ? 'bg-card text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`cc-btn cc-btn-sm ${mode === 'login' ? 'cc-btn-primary' : 'cc-btn-ghost'}`}
+              style={{ width: '100%' }}
             >
-              <LogIn className="size-3.5" />
+              <LogIn size={14} />
               <span>Sign in</span>
             </button>
             <button
               type="button"
               onClick={() => { setMode('register'); setError(''); }}
-              className={`flex items-center justify-center gap-1.5 rounded py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                mode === 'register'
-                  ? 'bg-card text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`cc-btn cc-btn-sm ${mode === 'register' ? 'cc-btn-primary' : 'cc-btn-ghost'}`}
+              style={{ width: '100%' }}
             >
-              <UserPlus className="size-3.5" />
+              <UserPlus size={14} />
               <span>Create account</span>
             </button>
           </div>
 
-          <div className="mb-5">
-            <h1 className="text-xl font-semibold text-foreground">
+          <div style={{ marginBottom: 18 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700 }}>
               {mode === 'login' ? 'Welcome back' : 'Create your panel account'}
             </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
+            <p style={{ marginTop: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
               {mode === 'login'
                 ? 'Sign in to manage your Bedrock server and bots.'
                 : 'Register to connect your own Bedrock server IP, port & world.'}
@@ -103,91 +108,118 @@ export function LoginView() {
           </div>
 
           {/* Server Target Pill */}
-          <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2.5">
-            <span className="text-[11px] text-muted-foreground">Server target</span>
-            <span className="font-mono text-xs text-foreground">{targetAddress}</span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 12px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-surface-alt)',
+              border: '1px solid var(--border-subtle)',
+              marginBottom: 14
+            }}
+          >
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Server target</span>
+            <span className="cc-mono" style={{ fontSize: 12 }}>{targetAddress}</span>
           </div>
 
-          {/* 1-Click Default Demo Credentials (Sign In mode only) */}
           {mode === 'login' && (
             <button
               type="button"
               onClick={handleFillDefaults}
-              className="mb-4 flex w-full items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10 cursor-pointer"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--accent-soft)',
+                border: '1px solid var(--accent-border)',
+                marginBottom: 16,
+                cursor: 'pointer'
+              }}
             >
-              <span className="text-[11px] font-medium text-primary">Use default admin</span>
-              <span className="font-mono text-[10px] text-muted-foreground">admin / •••••••••••</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>Use default admin</span>
+              <span className="cc-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>admin / •••••••••••</span>
             </button>
           )}
 
-          {/* Auth Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {mode === 'register' && (
-              <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-                <span>Display name (optional)</span>
+              <label className="cc-field">
+                <span className="cc-field-label">Display name (optional)</span>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Alex"
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="cc-input"
                 />
               </label>
             )}
 
-            <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-              <span>Username</span>
+            <label className="cc-field">
+              <span className="cc-field-label">Username</span>
               <input
                 autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="cc-input"
               />
             </label>
 
-            <label className="block space-y-1.5 text-xs font-medium text-muted-foreground">
-              <span>Password</span>
-              <span className="relative block">
+            <label className="cc-field">
+              <span className="cc-field-label">Password</span>
+              <div className="cc-input-wrap">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={mode === 'register' ? 'Minimum 6 characters' : 'Password'}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 pr-10 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="cc-input"
+                  style={{ paddingRight: 40 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-1 top-0.5 flex size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="cc-btn cc-btn-ghost cc-btn-icon"
+                  style={{ position: 'absolute', right: 4, width: 30, height: 30 }}
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
-              </span>
+              </div>
             </label>
 
             {error && (
-              <p role="alert" className="text-xs text-danger font-medium">
+              <p role="alert" style={{ fontSize: 12, fontWeight: 500, color: 'var(--danger)' }}>
                 {error}
               </p>
             )}
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full gap-2 mt-2"
-            >
+            <Button type="submit" disabled={loading} style={{ width: '100%', marginTop: 4 }}>
               <span>
                 {loading
                   ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
                   : (mode === 'login' ? 'Sign in' : 'Create account & continue')}
               </span>
-              <ArrowRight className="size-4" />
+              <ArrowRight size={15} />
             </Button>
           </form>
 
-          <p className="mt-5 border-t border-border pt-4 text-center text-[10px] leading-relaxed text-muted-foreground">
+          <p
+            style={{
+              marginTop: 20,
+              paddingTop: 14,
+              borderTop: '1px solid var(--border-subtle)',
+              textAlign: 'center',
+              fontSize: 11,
+              color: 'var(--text-muted)'
+            }}
+          >
             Session protected with HMAC SHA-256 JWT authorization.
           </p>
         </section>

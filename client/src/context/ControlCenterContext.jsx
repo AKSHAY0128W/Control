@@ -17,7 +17,7 @@ export function ControlCenterProvider({ children }) {
 
   // UI Navigation State
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'bots' | 'farms' | 'console' | 'activity' | 'settings' | 'security'
-  const [theme, setTheme] = useState(() => localStorage.getItem('smp_theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('smp_theme') || 'dark');
 
   // Metrics & Data State
   const [serverMetrics, setServerMetrics] = useState({
