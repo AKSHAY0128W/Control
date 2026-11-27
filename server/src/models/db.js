@@ -74,6 +74,17 @@ export const state = {
       keepAlive: true,
       lastPing: null,
       lastPingStatus: 'idle'
+    },
+    backup: {
+      enabled: true,
+      time: '07:00',      // IST time for daily backup
+      keepDays: 10,       // max auto-backups to retain
+      lastBackupAt: null,
+      lastBackupName: null,
+      lastBackupUuid: null,
+      lastBackupStatus: null,
+      lastBackupError: null,
+      lastAttemptAt: null
     }
   }
 };
@@ -115,6 +126,10 @@ export function loadStateFromFile() {
           render: {
             ...state.settings.render,
             ...(loaded.settings.render || {})
+          },
+          backup: {
+            ...state.settings.backup,
+            ...(loaded.settings.backup || {})
           }
         };
       }

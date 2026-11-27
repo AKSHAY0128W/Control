@@ -6,6 +6,7 @@ import { initDb, logActivity } from './models/db.js';
 import { initWebSocketServer } from './websocket/wsServer.js';
 import { startServerMonitoring } from './services/serverMonitor.js';
 import { renderService } from './services/renderService.js';
+import { startBackupScheduler } from './services/backupService.js';
 
 import { botsRouter } from './routes/bots.js';
 import { farmsRouter } from './routes/farms.js';
@@ -95,5 +96,6 @@ server.listen(config.port, async () => {
   await initDb();
   startServerMonitoring();
   renderService.initKeepAlive();
+  startBackupScheduler();
   logActivity('SYSTEM_START', `OUR SMP Control Center backend started on port ${config.port}`, 'info', 'Server');
 });

@@ -60,6 +60,7 @@ export const api = {
   testBedrock: (host, port) => request('/settings/test-bedrock', { method: 'POST', body: JSON.stringify({ host, port }) }),
   testPterodactyl: () => request('/settings/test-pterodactyl', { method: 'POST' }),
   testRender: () => request('/settings/test-render', { method: 'POST' }),
+  triggerBackupNow: () => request('/settings/backup/now', { method: 'POST' }),
   sendConsoleCommand: (command) => request('/settings/command', { method: 'POST', body: JSON.stringify({ command }) }),
 
   // Render Service Operations

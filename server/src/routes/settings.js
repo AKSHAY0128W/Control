@@ -4,6 +4,7 @@ import { sendConsoleCommand, fetchServerResources } from '../services/pterodacty
 import { renderService } from '../services/renderService.js';
 import { pollBedrockServer, testBedrockTarget } from '../services/serverMonitor.js';
 import { broadcast } from '../websocket/wsServer.js';
+import { startBackupScheduler, runBackupJob } from '../services/backupService.js';
 
 export const settingsRouter = express.Router();
 
@@ -49,12 +50,23 @@ settingsRouter.get('/', (req, res) => {
     settingsCopy.render.isConfigured = false;
   }
 
+  // Include backup settings (no secrets to mask)
+  if (!settingsCopy.backup) {
+    settingsCopy.backup = {
+      enabled: true,
+      time: '07:00',
+      keepDays: 10,
+      lastBackupAt: null,
+      lastBackupStatus: null
+    };
+  }
+
   res.json({ success: true, data: settingsCopy });
 });
 
 // POST update settings
 settingsRouter.post('/', (req, res) => {
-  const { bedrock, pterodactyl, autoTeleport, render } = req.body;
+  const { bedrock, pterodactyl, autoTeleport, render, backup } = req.body;
 
   let bedrockChanged = false;
   if (bedrock) {
@@ -103,6 +115,23 @@ settingsRouter.post('/', (req, res) => {
     if (render.keepAlive !== undefined) state.settings.render.keepAlive = Boolean(render.keepAlive);
   }
 
+  // Handle backup schedule settings
+  let backupScheduleChanged = false;
+  if (backup) {
+    if (!state.settings.backup) state.settings.backup = {};
+    if (backup.enabled !== undefined) {
+      state.settings.backup.enabled = Boolean(backup.enabled);
+      backupScheduleChanged = true;
+    }
+    if (backup.time !== undefined) {
+      state.settings.backup.time = backup.time;
+      backupScheduleChanged = true;
+    }
+    if (backup.keepDays !== undefined) {
+      state.settings.backup.keepDays = Math.max(1, Math.min(50, parseInt(backup.keepDays, 10) || 10));
+    }
+  }
+
   saveStateToFile();
   logActivity('SETTINGS_UPDATED', `Control Center settings updated.${bedrockChanged ? ` Target BDS changed to ${state.settings.bedrock.host}:${state.settings.bedrock.port}` : ''}`, 'info', 'Settings');
   broadcast({ type: 'SETTINGS_UPDATE', payload: state.settings });
@@ -116,6 +145,11 @@ settingsRouter.post('/', (req, res) => {
   // If render was updated, trigger a ping / test
   if (render?.serviceUrl) {
     renderService.pingRenderService().catch(() => {});
+  }
+
+  // If backup schedule changed, restart the cron scheduler
+  if (backupScheduleChanged) {
+    startBackupScheduler();
   }
 
   res.json({ success: true, message: 'Settings saved successfully' });
@@ -138,6 +172,16 @@ settingsRouter.post('/test-pterodactyl', async (req, res) => {
 settingsRouter.post('/test-render', async (req, res) => {
   const result = await renderService.pingRenderService();
   res.json(result);
+});
+
+// POST trigger manual backup now
+settingsRouter.post('/backup/now', async (req, res) => {
+  try {
+    const result = await runBackupJob(true);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // POST execute raw console command (Admin control)
